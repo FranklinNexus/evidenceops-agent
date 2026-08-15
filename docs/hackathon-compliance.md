@@ -30,7 +30,7 @@ submission count is not available.
 | New agent using Strands Agents SDK | `src/evidenceops/`, dependency manifest, and `tests/test_strands_integration.py` | Complete locally |
 | Complete working project | Web app, API, local fallback, tests | Complete locally |
 | Text description | `docs/devpost.md` | In progress |
-| Public repository URL | Not published | User action required |
+| Public repository URL | https://github.com/FranklinNexus/evidenceops-agent | Complete; public MIT repository verified |
 | All source, assets, and setup instructions | Repository plus `README.md` | Complete locally |
 | MIT or Apache license | `LICENSE` (MIT) | Complete locally |
 | README | `README.md` | Complete locally |
