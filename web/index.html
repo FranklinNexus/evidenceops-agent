@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="EvidenceOps evidence-backed compliance questionnaire workspace" />
+    <title>EvidenceOps | Review workspace</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/web/styles.css?v=0.1.0" />
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+    <script src="/web/app.js?v=0.1.0" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to workspace</a>
+
+    <header class="app-header">
+      <div class="brand-lockup" aria-label="EvidenceOps">
+        <span class="brand-mark" aria-hidden="true"><i data-lucide="scan-search"></i></span>
+        <div>
+          <strong>EvidenceOps</strong>
+          <span>Questionnaire review</span>
+        </div>
+      </div>
+
+      <div class="header-context">
+        <button class="project-picker" type="button" aria-label="Select project">
+          <span class="project-signal"></span>
+          <span>
+            <small>Active project</small>
+            <strong id="projectName">Northstar Security Review</strong>
+          </span>
+          <i data-lucide="chevron-down" aria-hidden="true"></i>
+        </button>
+        <span class="save-state" id="saveState"><i data-lucide="circle-check"></i> All changes saved</span>
+      </div>
+
+      <div class="header-actions">
+        <button class="icon-button mobile-only" id="toggleSources" type="button" aria-label="Open sources panel" title="Sources">
+          <i data-lucide="panel-left"></i>
+        </button>
+        <button class="button button-secondary" id="exportButton" type="button" aria-label="Export responses" title="Export responses">
+          <i data-lucide="download"></i>
+          <span>Export</span>
+        </button>
+        <button class="icon-button" type="button" aria-label="Open more options" title="More options">
+          <i data-lucide="more-horizontal"></i>
+        </button>
+        <div class="avatar" aria-label="Signed in as Demo Reviewer">DR</div>
+      </div>
+    </header>
+
+    <main class="workspace" id="main-content">
+      <aside class="source-panel" id="sourcePanel" aria-label="Questionnaire and evidence sources">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">Workspace</span>
+            <h1>Sources &amp; run</h1>
+          </div>
+          <button class="icon-button mobile-only" id="closeSources" type="button" aria-label="Close sources panel">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <section class="source-section" aria-labelledby="questionnaire-label">
+          <div class="section-title-row">
+            <h2 id="questionnaire-label">Questionnaire</h2>
+            <span class="required-label">Required</span>
+          </div>
+          <label class="dropzone" id="questionnaireDropzone" for="questionnaireInput" tabindex="0">
+            <input id="questionnaireInput" type="file" accept=".xlsx,.xls,.csv,.pdf,.docx" hidden />
+            <span class="dropzone-icon"><i data-lucide="file-up"></i></span>
+            <span><strong>Drop or choose a file</strong><small>XLSX, CSV, PDF, or DOCX</small></span>
+          </label>
+          <div class="file-row questionnaire-file" id="questionnaireFile">
+            <span class="file-type xlsx">XL</span>
+            <span class="file-meta">
+              <strong>Acme_RFP_2026.xlsx</strong>
+              <small>42 questions - 184 KB</small>
+            </span>
+            <button class="icon-button compact" type="button" aria-label="Remove questionnaire" title="Remove">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+        </section>
+
+        <section class="source-section evidence-section" aria-labelledby="evidence-label">
+          <div class="section-title-row">
+            <div>
+              <h2 id="evidence-label">Evidence library</h2>
+              <p id="evidenceCount">6 sources indexed</p>
+            </div>
+            <label class="icon-button compact" for="evidenceInput" aria-label="Add evidence files" title="Add evidence">
+              <i data-lucide="plus"></i>
+              <input id="evidenceInput" type="file" accept=".pdf,.docx,.xlsx,.csv,.txt,.md" multiple hidden />
+            </label>
+          </div>
+          <div class="evidence-list" id="evidenceList"></div>
+        </section>
+
+        <section class="source-section run-section" aria-labelledby="run-label">
+          <div class="section-title-row">
+            <div>
+              <h2 id="run-label">Agent run</h2>
+              <p id="runTimestamp">Last run today, 14:32</p>
+            </div>
+            <span class="provider-state" title="Model provider connected"><span></span> Online</span>
+          </div>
+          <ol class="pipeline" id="pipeline" aria-label="Pipeline stages">
+            <li class="complete"><i data-lucide="check"></i><span>Extract questions</span><small>42</small></li>
+            <li class="complete"><i data-lucide="check"></i><span>Retrieve evidence</span><small>38</small></li>
+            <li class="complete"><i data-lucide="check"></i><span>Draft answers</span><small>38</small></li>
+            <li class="complete"><i data-lucide="check"></i><span>Verify claims</span><small>5 flags</small></li>
+          </ol>
+          <button class="button button-primary run-button" id="runButton" type="button">
+            <i data-lucide="play"></i>
+            <span>Run questionnaire</span>
+          </button>
+        </section>
+      </aside>
+
+      <section class="queue-panel" aria-label="Question review queue">
+        <div class="queue-header">
+          <div>
+            <span class="eyebrow">Review queue</span>
+            <h2><span id="questionCount">42</span> questions</h2>
+          </div>
+          <button class="icon-button" id="collapseQueue" type="button" aria-label="Collapse question queue" title="Collapse queue">
+            <i data-lucide="panel-left-close"></i>
+          </button>
+        </div>
+
+        <div class="status-summary" id="statusSummary" aria-label="Question status counts"></div>
+
+        <div class="queue-tools">
+          <label class="search-field" for="searchInput">
+            <i data-lucide="search"></i>
+            <input id="searchInput" type="search" placeholder="Search questions" autocomplete="off" />
+            <kbd>/</kbd>
+          </label>
+          <button class="icon-button filter-button" id="filterButton" type="button" aria-label="Filter questions" title="Filter questions" aria-expanded="false">
+            <i data-lucide="sliders-horizontal"></i>
+            <span class="filter-indicator" id="filterIndicator" hidden></span>
+          </button>
+        </div>
+
+        <div class="filter-menu" id="filterMenu" hidden>
+          <div class="filter-menu-heading">
+            <strong>Show questions</strong>
+            <button type="button" id="clearFilters">Clear</button>
+          </div>
+          <label><input type="checkbox" value="draft" checked /> Draft</label>
+          <label><input type="checkbox" value="needs-review" checked /> Needs review</label>
+          <label><input type="checkbox" value="approved" checked /> Approved</label>
+          <label><input type="checkbox" value="rejected" checked /> Rejected</label>
+        </div>
+
+        <div class="question-list" id="questionList" role="listbox" aria-label="Questions"></div>
+        <div class="empty-state" id="emptyState" hidden>
+          <i data-lucide="search-x"></i>
+          <strong>No matching questions</strong>
+          <span>Change your search or status filters.</span>
+        </div>
+      </section>
+
+      <section class="review-panel" id="reviewPanel" aria-live="polite">
+        <div class="review-toolbar">
+          <button class="button button-quiet mobile-back" id="backToQueue" type="button">
+            <i data-lucide="arrow-left"></i> Queue
+          </button>
+          <div class="question-position">
+            <span id="questionPosition">Question 1 of 42</span>
+            <span class="status-badge status-needs-review" id="questionStatus">Needs review</span>
+          </div>
+          <div class="review-navigation">
+            <button class="icon-button" id="previousQuestion" type="button" aria-label="Previous question" title="Previous question">
+              <i data-lucide="chevron-up"></i>
+            </button>
+            <button class="icon-button" id="nextQuestion" type="button" aria-label="Next question" title="Next question">
+              <i data-lucide="chevron-down"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="review-scroll" id="reviewScroll">
+          <article class="question-block">
+            <div class="question-meta">
+              <span id="questionCategory">Access control</span>
+              <span id="questionId">AC-01</span>
+            </div>
+            <h2 id="questionText">Do you enforce multi-factor authentication for all privileged and administrative access?</h2>
+          </article>
+
+          <section class="answer-section" aria-labelledby="answer-heading">
+            <div class="answer-header">
+              <div>
+                <span class="eyebrow">Agent draft</span>
+                <h3 id="answer-heading">Proposed answer</h3>
+              </div>
+              <div class="confidence" id="confidenceBadge" title="Confidence is based on evidence coverage and verification checks">
+                <span class="confidence-dot"></span>
+                <span><strong id="confidenceValue">92%</strong> confidence</span>
+              </div>
+            </div>
+            <textarea id="answerEditor" rows="7" aria-label="Proposed answer"></textarea>
+            <div class="editor-footer">
+              <span id="wordCount">0 words</span>
+              <button class="button button-quiet" id="regenerateButton" type="button">
+                <i data-lucide="refresh-cw"></i> Regenerate
+              </button>
+            </div>
+          </section>
+
+          <section class="verification-section" aria-labelledby="verification-heading">
+            <div class="section-heading-wide">
+              <div>
+                <span class="eyebrow">Verification</span>
+                <h3 id="verification-heading">Evidence &amp; checks</h3>
+              </div>
+              <span class="claim-count" id="claimCount">3 claims verified</span>
+            </div>
+            <div class="flag-list" id="flagList"></div>
+            <div class="citation-list" id="citationList"></div>
+          </section>
+
+          <section class="notes-section" aria-labelledby="notes-heading">
+            <label for="reviewerNote">
+              <span class="eyebrow">Internal only</span>
+              <strong id="notes-heading">Reviewer note</strong>
+            </label>
+            <textarea id="reviewerNote" rows="3" placeholder="Add a note for collaborators..."></textarea>
+          </section>
+        </div>
+
+        <footer class="approval-bar">
+          <div class="approval-hint">
+            <i data-lucide="user-check"></i>
+            <span><strong>Human decision required</strong><small>Only approved answers are included in export</small></span>
+          </div>
+          <div class="approval-actions">
+            <button class="button button-danger" id="rejectButton" type="button">
+              <i data-lucide="x"></i> Reject
+            </button>
+            <button class="button button-approve" id="approveButton" type="button">
+              <i data-lucide="check"></i> Approve
+            </button>
+          </div>
+        </footer>
+      </section>
+    </main>
+
+    <div class="drawer-scrim" id="drawerScrim" hidden></div>
+
+    <dialog class="modal" id="rejectDialog">
+      <form method="dialog" id="rejectForm">
+        <div class="modal-heading">
+          <span class="modal-icon danger"><i data-lucide="message-square-warning"></i></span>
+          <div>
+            <h2>Reject this answer</h2>
+            <p>Explain what needs to change before another review.</p>
+          </div>
+        </div>
+        <label for="rejectionReason">Reason</label>
+        <textarea id="rejectionReason" rows="4" placeholder="Missing evidence, incorrect scope, outdated policy..." required></textarea>
+        <div class="modal-actions">
+          <button class="button button-secondary" value="cancel" type="submit">Cancel</button>
+          <button class="button button-danger" id="confirmReject" value="confirm" type="submit">Reject answer</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="modal export-modal" id="exportDialog">
+      <form method="dialog" id="exportForm">
+        <div class="modal-heading">
+          <span class="modal-icon"><i data-lucide="file-output"></i></span>
+          <div>
+            <h2>Export responses</h2>
+            <p>Only human-approved answers will be marked final.</p>
+          </div>
+        </div>
+        <fieldset>
+          <legend>Format</legend>
+          <label class="format-choice">
+            <input type="radio" name="export-format" value="xlsx" checked />
+            <span class="file-type xlsx">XL</span>
+            <span><strong>Excel workbook</strong><small>Answers, citations, and review status</small></span>
+          </label>
+          <label class="format-choice">
+            <input type="radio" name="export-format" value="json" />
+            <span class="file-type json">{ }</span>
+            <span><strong>JSON</strong><small>Structured export for downstream systems</small></span>
+          </label>
+        </fieldset>
+        <label class="check-choice"><input id="includeDrafts" type="checkbox" /> Include draft and rejected answers</label>
+        <div class="modal-actions">
+          <button class="button button-secondary" value="cancel" type="submit">Cancel</button>
+          <button class="button button-primary" id="confirmExport" value="confirm" type="submit"><i data-lucide="download"></i> Export file</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+  </body>
+</html>

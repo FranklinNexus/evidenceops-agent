@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EvidenceOps Architecture</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; background: #f5f7f5; color: #17211d; font-family: "DM Sans", Arial, sans-serif; }
+      body { padding: 42px 48px 36px; }
+      header { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; max-width: 1500px; margin: 0 auto 26px; }
+      h1 { margin: 0; font-size: 34px; line-height: 1.1; letter-spacing: 0; }
+      p { margin: 8px 0 0; color: #56625d; font-size: 16px; }
+      .legend { display: flex; gap: 18px; flex-wrap: wrap; color: #4f5b56; font-size: 13px; }
+      .legend span { display: inline-flex; align-items: center; gap: 7px; }
+      .legend i { width: 12px; height: 12px; border-radius: 3px; background: #dff3ed; border: 1px solid #317c6b; }
+      .legend .deterministic { background: #e8eef5; border-color: #55718c; }
+      .legend .human { background: #f8eadb; border-color: #a86d2d; }
+      .diagram-shell { max-width: 1500px; margin: 0 auto; background: #ffffff; border: 1px solid #dce2df; border-radius: 8px; padding: 24px 18px 16px; box-shadow: 0 10px 28px rgba(20, 39, 32, 0.06); }
+      .mermaid { display: flex; justify-content: center; min-height: 1270px; }
+      .mermaid svg { width: 100%; max-width: 1420px; height: 1250px; }
+      footer { max-width: 1500px; margin: 16px auto 0; display: flex; justify-content: space-between; color: #65716c; font-size: 13px; }
+      code { color: #254f46; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>EvidenceOps Architecture</h1>
+        <p>Evidence-backed questionnaire agent with deterministic controls and a human approval gate</p>
+      </div>
+      <div class="legend" aria-label="Diagram legend">
+        <span><i></i> Strands / agentic</span>
+        <span><i class="deterministic"></i> Deterministic control</span>
+        <span><i class="human"></i> Human decision</span>
+      </div>
+    </header>
+
+    <main class="diagram-shell">
+      <pre class="mermaid">
+flowchart TB
+    subgraph Inputs["Inputs and operator"]
+      direction LR
+      User["Compliance reviewer"] --> UI["Web review workspace"]
+      Files["Questionnaire + evidence<br/>PDF / XLSX / DOCX / CSV"] --> Parse["Format-aware parsers"]
+    end
+
+    subgraph App["EvidenceOps application"]
+      direction TB
+      subgraph Core["Deterministic application core"]
+        direction LR
+        UI --> API["Project-scoped FastAPI"] --> Service["EvidenceOpsService"]
+        Parse --> Service
+        Service --> State[("SQLite projects,<br/>citations & decisions")]
+      end
+
+      subgraph Agent["Strands Agents workflow"]
+        direction LR
+        Decompose["1. Extract questions"] --> Retrieve["2. Retrieve evidence"] --> Draft["3. Strands draft + citations"]
+        Draft --> Verify["4. Grounding + conflicts"] --> Gaps["5. Classify gaps"]
+      end
+
+      Service --> Decompose
+      Gaps --> Queue["Review queue"] --> Gate{"Human approval"}
+      Gate -->|Approved| Export["XLSX / CSV / JSON export"]
+      Gate -->|Edit / reject| Queue
+    end
+
+    subgraph Boundaries["Controlled integration boundaries"]
+      direction LR
+      subgraph Provider["Internal model provider"]
+        direction TB
+        Limit["Rate limit + retry<br/>+ circuit breaker"] --> Primary["OpenAI-compatible<br/>or Bedrock"]
+        Limit --> Fallback["Grounded deterministic<br/>fallback"]
+      end
+      subgraph Restricted["Restricted verification action"]
+        direction TB
+        ToolCaller["Structured caller"] --> Tool["verify_evidence<br/>tenant limit + TTL cache"]
+        Tool --> Audit[("Metadata-only audit")]
+      end
+    end
+
+    Draft -. "server-side only" .-> Limit
+    Tool --> Service
+
+    classDef agentic fill:#dff3ed,stroke:#317c6b,color:#173d35,stroke-width:1.5px;
+    classDef deterministic fill:#e8eef5,stroke:#55718c,color:#263f55,stroke-width:1.5px;
+    classDef human fill:#f8eadb,stroke:#a86d2d,color:#633f1a,stroke-width:1.5px;
+    class Decompose,Retrieve,Draft,Gaps,Primary,Fallback agentic;
+    class Parse,API,Service,State,Verify,Limit,Tool,Audit deterministic;
+    class User,Queue,Gate,Export human;
+      </pre>
+    </main>
+
+    <footer>
+      <span>Implemented local MVP: Web + FastAPI + SQLite + Strands provider adapters</span>
+      <span>Optional AWS path: AgentCore, S3, DynamoDB, CloudWatch</span>
+    </footer>
+
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "base",
+        securityLevel: "strict",
+        flowchart: { curve: "basis", htmlLabels: true, nodeSpacing: 28, rankSpacing: 44 },
+        themeVariables: {
+          fontFamily: "DM Sans, Arial, sans-serif",
+          primaryTextColor: "#17211d",
+          lineColor: "#76817c",
+          clusterBkg: "#f8faf9",
+          clusterBorder: "#cbd4d0"
+        }
+      });
+    </script>
+  </body>
+</html>

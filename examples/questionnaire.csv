@@ -1,0 +1,9 @@
+question_id,section,question
+Q-001,Encryption,"Is customer data encrypted in transit and at rest?"
+Q-002,Access Control,"Is multi-factor authentication enforced for privileged administrative access?"
+Q-003,Privacy,"In which regions is customer data stored?"
+Q-004,Incident Response,"What is your contractual security incident notification timeline?"
+Q-005,Resilience,"State the production recovery time objective (RTO) and recovery point objective (RPO)."
+Q-006,Assurance,"Do you perform an annual independent penetration test?"
+Q-007,AI Governance,"Is customer content used to train shared or public AI models?"
+Q-008,Third Parties,"Provide the current list of production subprocessors."
