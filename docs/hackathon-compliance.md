@@ -1,7 +1,7 @@
 # Agents for Humans Hackathon Compliance
 
 Verified against the official Devpost pages on 2026-08-15. The event remains open, Devpost shows
-2,089 participants, and the project gallery has not yet been published, so a current public
+2,092 participants, and the project gallery has not yet been published, so a current public
 submission count is not available.
 
 ## Official timeline
