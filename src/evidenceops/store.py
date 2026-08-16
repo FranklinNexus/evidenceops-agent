@@ -4,8 +4,8 @@ import json
 import sqlite3
 import threading
 import uuid
-from contextlib import contextmanager
 from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -170,6 +170,12 @@ class SQLiteStore:
                     for chunk in chunks
                 ],
             )
+            if kind == DocumentKind.evidence:
+                connection.execute(
+                    """UPDATE questions SET status = ?, updated_at = ?
+                       WHERE project_id = ? AND status = ?""",
+                    (ReviewStatus.draft.value, now, project_id, ReviewStatus.approved.value),
+                )
             connection.execute("UPDATE projects SET updated_at = ? WHERE id = ?", (now, project_id))
         return DocumentRecord(
             id=document_id,
@@ -301,19 +307,35 @@ class SQLiteStore:
             self._require_project(connection, project_id)
             if citation.chunk_id:
                 row = connection.execute(
-                    """SELECT c.text, c.page_or_sheet, d.filename FROM chunks c JOIN documents d ON d.id = c.document_id
-                       WHERE c.project_id = ? AND c.id = ?""",
-                    (project_id, citation.chunk_id),
+                    """SELECT c.text, c.page_or_sheet, c.document_id, d.filename
+                       FROM chunks c JOIN documents d ON d.id = c.document_id
+                       WHERE c.project_id = ? AND c.id = ? AND d.kind = ?""",
+                    (project_id, citation.chunk_id, DocumentKind.evidence.value),
                 ).fetchone()
                 if row:
                     return (
                         citation.quote in row["text"]
                         and citation.document == row["filename"]
                         and citation.page_or_sheet == row["page_or_sheet"]
+                        and (not citation.document_id or citation.document_id == row["document_id"])
                     )
-            rows = connection.execute(
-                """SELECT c.text FROM chunks c JOIN documents d ON d.id = c.document_id
-                   WHERE c.project_id = ? AND d.filename = ? AND c.page_or_sheet = ?""",
-                (project_id, citation.document, citation.page_or_sheet),
-            ).fetchall()
+            if citation.document_id:
+                rows = connection.execute(
+                    """SELECT c.text FROM chunks c JOIN documents d ON d.id = c.document_id
+                       WHERE c.project_id = ? AND d.id = ? AND d.filename = ?
+                       AND c.page_or_sheet = ? AND d.kind = ?""",
+                    (
+                        project_id,
+                        citation.document_id,
+                        citation.document,
+                        citation.page_or_sheet,
+                        DocumentKind.evidence.value,
+                    ),
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    """SELECT c.text FROM chunks c JOIN documents d ON d.id = c.document_id
+                       WHERE c.project_id = ? AND d.filename = ? AND c.page_or_sheet = ? AND d.kind = ?""",
+                    (project_id, citation.document, citation.page_or_sheet, DocumentKind.evidence.value),
+                ).fetchall()
         return any(citation.quote in row["text"] for row in rows)

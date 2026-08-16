@@ -1,7 +1,7 @@
 # Agents for Humans Hackathon Compliance
 
-Verified against the official Devpost pages on 2026-08-15. The event remains open, Devpost shows
-2,092 participants, and the project gallery has not yet been published, so a current public
+Verified against the official Devpost pages on 2026-08-16. The event remains open, Devpost shows
+2,416 participants, and the project gallery has not yet been published, so a current public
 submission count is not available.
 
 ## Official timeline
@@ -20,6 +20,7 @@ submission count is not available.
 - The agent must use Strands Agents SDK and do real work end to end, rather than only chat about a task.
 - An AWS Builder ID is required for participation.
 - The official FAQ says an AWS account is required to participate. AgentCore is encouraged but optional; Strands Agents is the required foundation.
+- The rules page was updated on 2026-08-12 to remove the `#AgentsforHumans` requirement from the optional blog-post bonus.
 - Third-party code, SDKs, APIs, and data must be used under their applicable terms and licenses.
 - All submission materials must be in English or include English translations.
 

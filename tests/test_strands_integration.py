@@ -4,6 +4,7 @@ import json
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from typing import ClassVar
 
 from evidenceops.config import Settings
 from evidenceops.models import DocumentKind
@@ -13,9 +14,9 @@ from evidenceops.store import SQLiteStore
 
 
 class _OpenAIContractHandler(BaseHTTPRequestHandler):
-    requests: list[dict] = []
+    requests: ClassVar[list[dict]] = []
 
-    def do_POST(self) -> None:  # noqa: N802 - stdlib handler API
+    def do_POST(self) -> None:
         length = int(self.headers.get("content-length", "0"))
         body = self.rfile.read(length)
         request = json.loads(body)

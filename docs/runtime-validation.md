@@ -1,6 +1,6 @@
 # Runtime Validation
 
-Validated on 2026-08-15 with Python 3.13.13.
+Validated on 2026-08-16 with Python 3.13.13.
 
 ## Installed release-gate dependencies
 
@@ -12,6 +12,10 @@ Validated on 2026-08-15 with Python 3.13.13.
 | `openai` | 2.54.0 | Apache-2.0 |
 
 `python -m pip check` reported no broken requirements.
+
+The release environment uses `pip 26.2.1` and `pytest 9.1.1`. `pip-audit 2.10.1 --local`
+reported no known vulnerabilities in the auditable installed packages; the unpublished local
+`evidenceops 0.1.0` package was skipped because it is not present on PyPI.
 
 ## Reproducible Strands gate
 
@@ -35,6 +39,6 @@ for the final video requires separately approved credentials and must keep those
 ## Full suite result
 
 ```text
-17 passed
-82% application coverage
+25 passed
+85% application coverage
 ```

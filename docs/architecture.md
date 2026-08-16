@@ -128,11 +128,11 @@ The HTTP entry accepts a structured object:
 | `question` | string | The requirement being answered |
 | `answer` | string | The answer text to verify |
 | `citations` | array of `{document, page_or_sheet, quote}` | Exact source spans claimed as support |
-| `project_id` | optional string | When present, verify each citation against stored project evidence |
+| `project_id` | required string | Tenant-scoped project whose stored evidence must contain every cited quote |
 
 It returns `tenant_id`, `request_id`, `cached`, `grounded`, `hallucination_risk`, `unsupported_claims`, `contradictions`, and per-citation integrity results. Repeated calls use a tenant-separated TTL cache; calls are limited per tenant, and the audit table records only identifiers, the request hash, cache use, outcome, and timestamp. It does not store prompts or provider credentials in the audit record.
 
-The optional MCP server exposes the same inputs as a `verify_evidence` tool and delegates directly to `EvidenceOpsService.verify_evidence`. It is built through the same application factory, so it reuses the configured store, settings, provider construction, citation rules, and failure semantics. Verification itself is deterministic and does not invoke a model. Provider-specific calls used elsewhere for drafting continue through the existing provider abstraction; the MCP adapter does not call a model endpoint directly.
+The optional MCP server exposes the same inputs as a `verify_evidence` tool and delegates directly to `EvidenceOpsService.verify_evidence`. A project id is required: inline citations without a tenant-scoped evidence library are not treated as verified. It is built through the same application factory, so it reuses the configured store, settings, provider construction, citation rules, and failure semantics. Verification itself is deterministic and does not invoke a model. Provider-specific calls used elsewhere for drafting continue through the existing provider abstraction; the MCP adapter does not call a model endpoint directly.
 
 The adapter is intentionally limited to verification. Upload, questionnaire execution, human review, and export remain in the existing application flow and approval boundary. Adding another transport therefore does not create a second agent, duplicate business logic, or bypass the human gate.
 

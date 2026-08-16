@@ -8,7 +8,7 @@ This checklist supports the public hackathon repository. It is an engineering re
 
 ## 1. Verified event requirements
 
-The following requirements were verified against the official Agents for Humans Hackathon pages on 2026-08-15:
+The following requirements were verified against the official Agents for Humans Hackathon pages on 2026-08-16:
 
 - [x] Submission is open from 2026-08-10 09:00 PT through 2026-09-14 17:00 PT.
 - [x] The entry must be a new project created during the submission period.
@@ -153,7 +153,7 @@ Release only when every owner is recorded and each blocking item is closed.
 
 | Gate | Evidence | Owner | Status |
 | --- | --- | --- | --- |
-| Event rules verified | Official URLs, captured wording, verified 2026-08-15 | `{{OWNER}}` | Verified; recheck before submission |
+| Event rules verified | Official URLs, captured wording, verified 2026-08-16 | `{{OWNER}}` | Verified; recheck before submission |
 | Project license consistent | `LICENSE`, metadata, README | `{{OWNER}}` | `{{STATUS}}` |
 | Dependencies cleared | Inventory, notices, exceptions | `{{OWNER}}` | `{{STATUS}}` |
 | Secrets/history cleared | Scanner report and credential review | `{{OWNER}}` | `{{STATUS}}` |

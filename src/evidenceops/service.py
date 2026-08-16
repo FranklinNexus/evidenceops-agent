@@ -42,6 +42,14 @@ class TenantRateLimitExceeded(RuntimeError):
     pass
 
 
+def _spreadsheet_safe(value: object) -> object:
+    if not isinstance(value, str):
+        return value
+    if value.lstrip(" \t\r\n").startswith(("=", "+", "-", "@")):
+        return "'" + value
+    return value
+
+
 class EvidenceOpsService:
     """Reusable application boundary shared by HTTP, tests, and optional MCP transports."""
 
@@ -143,7 +151,7 @@ class EvidenceOpsService:
 
     def review_question(self, project_id: str, question_id: str, review: ReviewRequest) -> QuestionRecord:
         question = self.store.get_question(project_id, question_id)
-        answer = review.edited_answer.strip() if review.edited_answer else question.answer
+        answer = review.edited_answer.strip() if review.edited_answer is not None else question.answer
         if review.action == "approve":
             if not answer:
                 raise ValueError("An answer is required before approval")
@@ -216,7 +224,7 @@ class EvidenceOpsService:
                 )
                 return response
 
-        if request.project_id and not self.store.project_belongs_to(request.project_id, request.tenant_id):
+        if not self.store.project_belongs_to(request.project_id, request.tenant_id):
             self.store.record_tool_audit(
                 tenant_id=request.tenant_id,
                 request_id=request_id,
@@ -230,12 +238,8 @@ class EvidenceOpsService:
         citations = [Citation(**citation.model_dump()) for citation in request.citations]
         integrity: list[CitationIntegrity] = []
         for index, citation in enumerate(citations):
-            if request.project_id:
-                verified = self.store.find_quote(request.project_id, citation)
-                reason = "Quote and locator match stored evidence" if verified else "Quote or locator not found in project evidence"
-            else:
-                verified = True
-                reason = "Citation supplied inline; storage integrity was not requested"
+            verified = self.store.find_quote(request.project_id, citation)
+            reason = "Quote and locator match stored evidence" if verified else "Quote or locator not found in project evidence"
             integrity.append(CitationIntegrity(citation_index=index, verified=verified, reason=reason))
         checks = analyze_grounding(request.answer, citations)
         all_integral = all(item.verified for item in integrity)
@@ -299,7 +303,9 @@ class EvidenceOpsService:
             for row in rows:
                 worksheet.append(
                     [
-                        json.dumps(row[field], ensure_ascii=False) if field == "citations" else row[field]
+                        _spreadsheet_safe(
+                            json.dumps(row[field], ensure_ascii=False) if field == "citations" else row[field]
+                        )
                         for field in fieldnames
                     ]
                 )
@@ -323,7 +329,12 @@ class EvidenceOpsService:
         writer = csv.DictWriter(output, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(
-            {**row, "citations": json.dumps(row["citations"], ensure_ascii=False)}
+            {
+                field: _spreadsheet_safe(
+                    json.dumps(row[field], ensure_ascii=False) if field == "citations" else row[field]
+                )
+                for field in fieldnames
+            }
             for row in rows
         )
         return output.getvalue().encode("utf-8-sig"), "text/csv; charset=utf-8", "evidenceops-export.csv"

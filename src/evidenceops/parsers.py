@@ -12,7 +12,6 @@ from pypdf import PdfReader
 
 from .models import ParsedChunk
 
-
 SUPPORTED_EXTENSIONS = {".pdf", ".xlsx", ".docx", ".txt", ".md", ".csv"}
 QUESTION_STARTERS = re.compile(
     r"^(?:describe|explain|provide|detail|specify|list|identify|confirm|do|does|did|is|are|was|were|"
@@ -166,7 +165,7 @@ def _question_candidates(text: str) -> list[str]:
             value = re.sub(r"^\s*(?:\d+[.)]|[-*•])\s*", "", value)
             if not value or len(value) < 5:
                 continue
-            if labeled or value.endswith("?") or value.endswith("？") or QUESTION_STARTERS.match(value):
+            if labeled or value.endswith(("?", "？")) or QUESTION_STARTERS.match(value):
                 candidates.append(value)
     return candidates
 

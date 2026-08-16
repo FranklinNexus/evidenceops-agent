@@ -16,7 +16,7 @@ const DEMO_QUESTIONS = [
     answer:
       "Yes. Multi-factor authentication is required for all privileged and administrative access to production systems, cloud consoles, and corporate identity services. Access is provisioned through role-based groups, reviewed quarterly, and revoked through the documented offboarding workflow.",
     status: "needs-review",
-    confidence: 92,
+    coverage: 92,
     claims: 3,
     citations: [
       {
@@ -43,7 +43,7 @@ const DEMO_QUESTIONS = [
     answer:
       "Managers submit access requests through the service desk, and system owners approve access according to job responsibilities. Privileged access is reviewed quarterly, while standard application access is reviewed at least annually. HR termination events trigger same-day deprovisioning through the identity provider.",
     status: "approved",
-    confidence: 95,
+    coverage: 95,
     claims: 4,
     citations: [
       {
@@ -69,7 +69,7 @@ const DEMO_QUESTIONS = [
     answer:
       "Yes. Customer data is encrypted in transit using TLS 1.2 or higher and at rest using AES-256 encryption provided by the underlying cloud platform. Encryption keys are managed in the cloud key management service with access restricted to authorized platform roles.",
     status: "approved",
-    confidence: 97,
+    coverage: 97,
     claims: 3,
     citations: [
       {
@@ -95,7 +95,7 @@ const DEMO_QUESTIONS = [
     answer:
       "The evidence library defines retention periods by data class, but it does not establish a single default period for all customer data after contract termination. The applicable period should be confirmed against the customer agreement and deletion procedure before a final response is provided.",
     status: "draft",
-    confidence: 54,
+    coverage: 54,
     claims: 1,
     citations: [
       {
@@ -122,7 +122,7 @@ const DEMO_QUESTIONS = [
     answer:
       "Yes. A documented incident response plan assigns severity levels, response roles, escalation paths, evidence-preservation requirements, and communication responsibilities. The plan is reviewed annually and exercised through at least one tabletop test each year.",
     status: "approved",
-    confidence: 94,
+    coverage: 94,
     claims: 3,
     citations: [
       {
@@ -148,7 +148,7 @@ const DEMO_QUESTIONS = [
     answer:
       "The incident response plan requires prompt customer notification following confirmation and impact assessment. The current evidence does not support a universal notification window; the governing customer agreement and applicable law determine the deadline.",
     status: "needs-review",
-    confidence: 66,
+    coverage: 66,
     claims: 2,
     citations: [
       {
@@ -175,7 +175,7 @@ const DEMO_QUESTIONS = [
     answer:
       "Business continuity and disaster recovery plans are tested at least annually. Material findings are recorded, assigned to owners, and tracked through remediation. Recovery objectives are reviewed as part of the exercise process.",
     status: "approved",
-    confidence: 90,
+    coverage: 90,
     claims: 3,
     citations: [
       {
@@ -196,7 +196,7 @@ const DEMO_QUESTIONS = [
     answer:
       "Authenticated infrastructure and application vulnerability scans run at least monthly, with additional scanning after material changes. Critical findings are targeted for remediation within 15 days and high findings within 30 days, subject to documented risk acceptance and compensating controls.",
     status: "approved",
-    confidence: 93,
+    coverage: 93,
     claims: 4,
     citations: [
       {
@@ -222,7 +222,7 @@ const DEMO_QUESTIONS = [
     answer:
       "The current evidence register identifies 31 subprocessors and records service purpose, processing location, data category, and review owner. Confirm that the register is approved for external disclosure before attaching it to the final response.",
     status: "needs-review",
-    confidence: 78,
+    coverage: 78,
     claims: 2,
     citations: [
       {
@@ -248,7 +248,7 @@ const DEMO_QUESTIONS = [
     answer:
       "Security audit logs are retained for 365 days, with at least 90 days available for immediate search. Access is limited to authorized Security and Platform Engineering roles and is itself logged and reviewed.",
     status: "approved",
-    confidence: 88,
+    coverage: 88,
     claims: 3,
     citations: [
       {
@@ -269,7 +269,7 @@ const DEMO_QUESTIONS = [
     answer:
       "Background screening is completed for employees where permitted by local law and proportionate to the role. The current evidence does not establish that the same control applies to every contractor before access is granted.",
     status: "rejected",
-    confidence: 61,
+    coverage: 61,
     claims: 2,
     citations: [
       {
@@ -295,7 +295,7 @@ const DEMO_QUESTIONS = [
     answer:
       "No supported answer is available from the current evidence library. Obtain the approved AI data-use policy and product architecture statement before responding.",
     status: "draft",
-    confidence: 28,
+    coverage: 28,
     claims: 0,
     citations: [],
     flags: [
@@ -327,6 +327,7 @@ const state = {
   running: false,
   saveTimer: null,
   backendConnected: false,
+  providerLabel: "Evidence-only demo",
 };
 
 const dom = {};
@@ -357,6 +358,7 @@ function cacheDom() {
     "runButton",
     "pipeline",
     "runTimestamp",
+    "providerState",
     "questionCount",
     "statusSummary",
     "searchInput",
@@ -377,8 +379,8 @@ function cacheDom() {
     "questionCategory",
     "questionId",
     "questionText",
-    "confidenceBadge",
-    "confidenceValue",
+    "coverageBadge",
+    "coverageValue",
     "answerEditor",
     "wordCount",
     "regenerateButton",
@@ -527,6 +529,11 @@ function bindEvents() {
 }
 
 async function hydrateFromApi() {
+  const health = await apiRequest("/api/health", { method: "GET" });
+  if (health?.provider?.active) {
+    state.providerLabel = health.provider.active === "deterministic-demo" ? "Evidence-only demo" : "Strands provider";
+    renderProviderState();
+  }
   const projects = await apiRequest("/api/projects", { method: "GET" });
   if (!Array.isArray(projects) || projects.length === 0) return;
   await loadProject(projects[0].id);
@@ -542,6 +549,7 @@ async function loadProject(projectId) {
   state.selectedId = state.questions[0]?.id ?? null;
   state.evidence = (payload.documents ?? []).filter((document) => document.kind === "evidence").map(normalizeEvidence);
   state.backendConnected = true;
+  renderProviderState();
   dom.projectName.textContent = payload.project.name;
 
   const questionnaire = (payload.documents ?? []).find((document) => document.kind === "questionnaire");
@@ -571,15 +579,15 @@ async function ensureProject() {
 }
 
 function normalizeQuestion(question, index) {
-  const inferredConfidence = question.checks?.grounded
+  const inferredCoverage = question.checks?.grounded
     ? question.checks?.hallucination_risk
       ? 72
       : 92
     : question.citations?.length
       ? 64
       : 28;
-  const rawConfidence = Number(question.confidence ?? question.confidence_score ?? inferredConfidence);
-  const confidence = rawConfidence > 0 && rawConfidence <= 1 ? Math.round(rawConfidence * 100) : Math.round(rawConfidence);
+  const rawCoverage = Number(question.coverage ?? question.confidence ?? question.confidence_score ?? inferredCoverage);
+  const coverage = rawCoverage > 0 && rawCoverage <= 1 ? Math.round(rawCoverage * 100) : Math.round(rawCoverage);
   const flags = Array.isArray(question.flags) ? [...question.flags] : [];
 
   const contradictions = question.checks?.contradictions ?? question.contradictions;
@@ -614,8 +622,9 @@ function normalizeQuestion(question, index) {
     text: question.text ?? question.question ?? question.question_text ?? "Untitled question",
     answer: question.answer ?? question.draft_answer ?? question.proposed_answer ?? "",
     status: normalizeStatus(question.status),
-    confidence: Number.isFinite(confidence) ? Math.max(0, Math.min(100, confidence)) : 0,
-    claims: Number(question.claims ?? question.verified_claims ?? question.citations?.length ?? 0),
+    coverage: Number.isFinite(coverage) ? Math.max(0, Math.min(100, coverage)) : 0,
+    claims: Number(question.claims ?? question.verified_claims ?? 0),
+    citationsLinked: question.citations?.length ?? question.evidence?.length ?? 0,
     citations: (question.citations ?? question.evidence ?? []).map(normalizeCitation),
     flags,
     note: question.note ?? question.reviewer_note ?? "",
@@ -657,11 +666,21 @@ function normalizeEvidence(file) {
 }
 
 function renderAll() {
+  renderProviderState();
   renderStatusSummary();
   renderQueue();
   renderReview();
   if (!state.running) renderPipelineSummary();
   dom.questionCount.textContent = state.questions.length;
+}
+
+function renderProviderState() {
+  if (!dom.providerState) return;
+  const label = state.providerLabel || (state.backendConnected ? "Service ready" : "Offline");
+  dom.providerState.innerHTML = `<span></span> ${escapeHtml(label)}`;
+  dom.providerState.title = label === "Strands provider"
+    ? "Operator-configured Strands provider is available for drafting"
+    : "Drafts remain constrained to retrieved evidence when no hosted provider is configured";
 }
 
 function renderPipelineSummary() {
@@ -768,7 +787,7 @@ function renderQueue() {
       </span>
       <p>${escapeHtml(question.text)}</p>
       <span class="queue-status ${question.status}">${STATUS_LABELS[question.status]}</span>
-      <span class="question-item-flags">${flagMarkup}<span class="queue-confidence">${question.confidence}%</span></span>
+      <span class="question-item-flags">${flagMarkup}<span class="queue-confidence" aria-label="${question.coverage}% evidence coverage">${question.coverage}%</span></span>
     `;
     button.addEventListener("click", () => selectQuestion(question.id));
     dom.questionList.appendChild(button);
@@ -791,9 +810,9 @@ function renderReview() {
     dom.answerEditor.disabled = true;
     dom.reviewerNote.value = "";
     dom.reviewerNote.disabled = true;
-    dom.confidenceValue.textContent = "0%";
-    dom.confidenceBadge.className = "confidence low";
-    dom.claimCount.textContent = "0 claims verified";
+    dom.coverageValue.textContent = "0%";
+    dom.coverageBadge.className = "confidence low";
+    dom.claimCount.textContent = "0 citations linked";
     dom.flagList.innerHTML = "";
     dom.citationList.innerHTML = "";
     dom.previousQuestion.disabled = true;
@@ -817,9 +836,10 @@ function renderReview() {
   dom.questionText.textContent = question.text;
   dom.answerEditor.value = question.answer;
   dom.reviewerNote.value = question.note;
-  dom.confidenceValue.textContent = `${question.confidence}%`;
-  dom.confidenceBadge.className = `confidence${question.confidence < 50 ? " low" : question.confidence < 80 ? " medium" : ""}`;
-  dom.claimCount.textContent = `${question.claims} ${question.claims === 1 ? "claim" : "claims"} verified`;
+  dom.coverageValue.textContent = `${question.coverage}%`;
+  dom.coverageBadge.className = `confidence${question.coverage < 50 ? " low" : question.coverage < 80 ? " medium" : ""}`;
+  const linked = question.citationsLinked ?? question.citations.length;
+  dom.claimCount.textContent = `${linked} ${linked === 1 ? "citation" : "citations"} linked`;
   dom.previousQuestion.disabled = index <= 0;
   dom.nextQuestion.disabled = index >= state.questions.length - 1;
   dom.approveButton.innerHTML = `<i data-lucide="check"></i> ${question.status === "approved" ? "Approved" : "Approve"}`;
@@ -964,6 +984,12 @@ function scheduleSave(question) {
         refreshIcons();
         return;
       }
+      const index = state.questions.findIndex((item) => item.id === question.id);
+      if (index >= 0) {
+        const updated = normalizeQuestion(saved, index);
+        state.questions.splice(index, 1, updated);
+        state.selectedId = updated.id;
+      }
     }
     dom.saveState.innerHTML = '<i data-lucide="circle-check"></i> All changes saved';
     refreshIcons();
@@ -978,6 +1004,7 @@ async function setDecision(status) {
 
   if (status === "approved" && (question.citations.length === 0 || question.flags.some((flag) => flag.type === "missing"))) {
     showToast("Review the missing-evidence warning before approval.", "warning");
+    return;
   }
 
   if (state.projectId) {
@@ -1003,21 +1030,14 @@ async function setDecision(status) {
 
 async function reviewQuestion(question, status) {
   const path = `/api/projects/${encodeURIComponent(state.projectId)}/questions/${encodeURIComponent(question.id)}/review`;
-  try {
-    const response = await fetch(path, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: status === "approved" ? "approve" : "reject",
-        edited_answer: question.answer,
-        note: question.note || null,
-      }),
-    });
-    const payload = await response.json().catch(() => ({}));
-    return response.ok ? payload : { _error: true, status: response.status, detail: payload.detail };
-  } catch {
-    return null;
-  }
+  return apiRequest(path, {
+    method: "PATCH",
+    body: JSON.stringify({
+      action: status === "approved" ? "approve" : "reject",
+      edited_answer: question.answer,
+      note: question.note || null,
+    }),
+  });
 }
 
 async function regenerateAnswer() {
@@ -1027,7 +1047,7 @@ async function regenerateAnswer() {
   dom.regenerateButton.innerHTML = '<span class="step-spinner"></span> Regenerating';
 
   const payload = state.projectId
-    ? await apiRequest(`/api/projects/${encodeURIComponent(state.projectId)}/run`, { method: "POST" })
+    ? await apiRequest(`/api/projects/${encodeURIComponent(state.projectId)}/run`, { method: "POST", timeoutMs: 90000 })
     : null;
   const refreshed = payload?.questions?.find((item) => String(item.id) === question.id);
   if (refreshed) {
@@ -1084,7 +1104,7 @@ async function handleQuestionnaire(file) {
   formData.append("files", file);
   const payload = await apiRequest(
     `/api/projects/${encodeURIComponent(projectId)}/documents?kind=questionnaire`,
-    { method: "POST", body: formData },
+    { method: "POST", body: formData, timeoutMs: 60000 },
   );
   if (!payload || payload._error) {
     showToast(payload?.detail || "Questionnaire upload did not complete. The file remains selected.", "warning");
@@ -1122,6 +1142,7 @@ async function handleEvidenceFiles(files) {
   const payload = await apiRequest(`/api/projects/${encodeURIComponent(projectId)}/documents?kind=evidence`, {
     method: "POST",
     body: formData,
+    timeoutMs: 60000,
   });
 
   if (!payload || payload._error) {
@@ -1162,7 +1183,7 @@ async function runPipeline() {
 
   const projectId = state.demoMode ? null : await ensureProject();
   const payload = projectId
-    ? await apiRequest(`/api/projects/${encodeURIComponent(projectId)}/run`, { method: "POST" })
+    ? await apiRequest(`/api/projects/${encodeURIComponent(projectId)}/run`, { method: "POST", timeoutMs: 90000 })
     : null;
   if (payload?._error) {
     dom.runButton.disabled = false;
@@ -1210,6 +1231,10 @@ async function exportResponses() {
   const questions = includeDrafts ? state.questions : state.questions.filter((question) => question.status === "approved");
 
   const backendResponse = await fetchExport(format, includeDrafts);
+  if (backendResponse?._error) {
+    showToast(backendResponse.detail, "warning");
+    return;
+  }
   if (backendResponse) {
     const blob = await backendResponse.blob();
     downloadBlob(blob, filenameFromDisposition(backendResponse.headers.get("content-disposition")) || `evidenceops-export.${format}`);
@@ -1234,12 +1259,12 @@ async function exportResponses() {
         (question) => `
           <tr>
             <td>${escapeHtml(question.number)}</td><td>${escapeHtml(question.category)}</td><td>${escapeHtml(question.text)}</td>
-            <td>${escapeHtml(question.answer)}</td><td>${escapeHtml(STATUS_LABELS[question.status])}</td><td>${question.confidence}%</td>
+            <td>${escapeHtml(spreadsheetSafeText(question.answer))}</td><td>${escapeHtml(STATUS_LABELS[question.status])}</td><td>${question.coverage}%</td>
             <td>${escapeHtml(question.citations.map((citation) => `${citation.source}: ${citation.location}`).join(" | "))}</td>
           </tr>`,
       )
       .join("");
-    const workbook = `<html><head><meta charset="UTF-8"></head><body><table><thead><tr><th>ID</th><th>Category</th><th>Question</th><th>Answer</th><th>Status</th><th>Confidence</th><th>Citations</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+    const workbook = `<html><head><meta charset="UTF-8"></head><body><table><thead><tr><th>ID</th><th>Category</th><th>Question</th><th>Answer</th><th>Status</th><th>Evidence coverage</th><th>Citations</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
     downloadBlob(new Blob([workbook], { type: "application/vnd.ms-excel" }), "evidenceops-responses.xls");
   }
   showToast(`${questions.length} responses exported`, "success");
@@ -1247,9 +1272,9 @@ async function exportResponses() {
 
 async function fetchExport(format, includeDrafts) {
   if (!state.projectId) return null;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3500);
     const response = await fetch(
       `/api/projects/${encodeURIComponent(state.projectId)}/export?format=${encodeURIComponent(format)}&include_drafts=${includeDrafts}`,
       {
@@ -1257,20 +1282,25 @@ async function fetchExport(format, includeDrafts) {
       signal: controller.signal,
       },
     );
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      return { _error: true, detail: payload.detail || `Export failed (${response.status})` };
+    }
+    return response;
+  } catch (error) {
+    return { _error: true, detail: error.name === "AbortError" ? "Export timed out. Please retry." : "Export request failed." };
+  } finally {
     clearTimeout(timeout);
-    return response.ok ? response : null;
-  } catch {
-    return null;
   }
 }
 
 async function apiRequest(path, options = {}) {
+  const controller = new AbortController();
+  const { timeoutMs = 15000, ...requestOptions } = options;
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3500);
-    const headers = options.body instanceof FormData ? {} : { "Content-Type": "application/json" };
-    const response = await fetch(path, { ...options, headers: { ...headers, ...(options.headers || {}) }, signal: controller.signal });
-    clearTimeout(timeout);
+    const headers = requestOptions.body instanceof FormData ? {} : { "Content-Type": "application/json" };
+    const response = await fetch(path, { ...requestOptions, headers: { ...headers, ...(requestOptions.headers || {}) }, signal: controller.signal });
     if (!response.ok) {
       const payload = await response.json().catch(() => ({}));
       return { _error: true, status: response.status, detail: payload.detail || `Request failed (${response.status})` };
@@ -1279,9 +1309,20 @@ async function apiRequest(path, options = {}) {
     if (response.status === 204) return {};
     const contentType = response.headers.get("content-type") || "";
     return contentType.includes("application/json") ? await response.json() : {};
-  } catch {
-    return null;
+  } catch (error) {
+    return {
+      _error: true,
+      status: 0,
+      detail: error.name === "AbortError" ? "The request timed out. Please retry." : "The local service did not respond.",
+    };
+  } finally {
+    clearTimeout(timeout);
   }
+}
+
+function spreadsheetSafeText(value) {
+  const text = String(value ?? "");
+  return /^[\s]*[=+\-@]/.test(text) ? `'${text}` : text;
 }
 
 function showToast(message, tone = "success") {

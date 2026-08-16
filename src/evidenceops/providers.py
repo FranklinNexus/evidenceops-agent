@@ -5,6 +5,7 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+
 from pydantic import BaseModel, Field
 
 from .config import Settings
@@ -35,7 +36,7 @@ class DeterministicEvidenceProvider(AnswerProvider):
         if not citations:
             return DraftResult(answer=None, citation_indexes=[], provider=self.name)
         selected = citations[:2]
-        quotes = " ".join(citation.quote.strip() for citation in selected if citation.quote.strip())
+        quotes = "\n".join(citation.quote.strip() for citation in selected if citation.quote.strip())
         return DraftResult(
             answer=f"Available evidence states: {quotes}",
             citation_indexes=list(range(len(selected))),
@@ -95,7 +96,7 @@ class StrandsOpenAIProvider(AnswerProvider):
         result = agent(prompt, structured_output_model=AgentDraft)
         structured = result.structured_output
         if not isinstance(structured, AgentDraft):
-            raise RuntimeError("Strands provider returned no structured draft")
+            raise TypeError("Strands provider returned no structured draft")
         indexes = sorted({index for index in structured.citation_indexes if 0 <= index < len(citations)})
         if not indexes:
             raise RuntimeError("Strands provider returned no valid citations")
@@ -148,7 +149,7 @@ class StrandsBedrockProvider(AnswerProvider):
         )
         structured = result.structured_output
         if not isinstance(structured, AgentDraft):
-            raise RuntimeError("Strands Bedrock provider returned no structured draft")
+            raise TypeError("Strands Bedrock provider returned no structured draft")
         indexes = sorted({index for index in structured.citation_indexes if 0 <= index < len(citations)})
         if not indexes:
             raise RuntimeError("Strands Bedrock provider returned no valid citations")
@@ -217,7 +218,7 @@ class ResilientProvider(AnswerProvider):
                     self.failures = 0
                     self.opened_at = None
                 return result
-            except Exception as exc:  # provider errors must never break a questionnaire run
+            except Exception as exc:  # noqa: BLE001 - provider failures must always degrade to cited output
                 last_error = exc
                 if attempt < self.retries:
                     time.sleep(min(0.15 * (2**attempt), 0.6))

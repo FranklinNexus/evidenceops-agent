@@ -1,10 +1,23 @@
 # EvidenceOps
 
-EvidenceOps is a human-reviewed agent for compliance and RFP questionnaires. It turns a questionnaire and an organization-supplied evidence library into cited draft answers, contradiction and hallucination checks, a missing-evidence list, an approval queue, and an exportable response set.
+**No evidence, no answer.** EvidenceOps turns security, compliance, and RFP questionnaires into cited answer drafts that a human can inspect, approve, and export.
 
-The central rule is simple: uploaded source material is evidence; model output is not. EvidenceOps keeps unsupported questions blocked instead of inventing policies, certifications, dates, or controls.
+A fluent but unsupported compliance answer creates risk. EvidenceOps uses the [Strands Agents SDK](https://strandsagents.com/) for grounded drafting, while deterministic application code retains control of source identity, contradiction checks, workflow state, and approval. Uploaded source material is evidence; model output is not.
 
-This project was created during the 2026 Agents for Humans Hackathon submission period and uses the [Strands Agents SDK](https://strandsagents.com/) behind a provider-neutral boundary.
+![EvidenceOps review workspace](docs/assets/evidenceops-demo.png)
+
+## What the demo proves
+
+The included synthetic CloudDesk run makes the trust boundary visible in one review queue:
+
+- eight questionnaire items are extracted with their source locations;
+- seven receive evidence-backed drafts with exact document quotes;
+- a 48-hour versus 72-hour incident-notification conflict is surfaced instead of silently resolved;
+- a missing subprocessor register remains an explicit evidence request, not an invented answer;
+- editing an approved answer invalidates the old approval; and
+- exports include only approved answers by default.
+
+This project was created during the 2026 Agents for Humans Hackathon submission period for the **Professional Agents** track.
 
 ## Demo flow
 
@@ -86,7 +99,7 @@ Core endpoints:
 - `GET /api/projects/{project_id}/export?format=xlsx|csv|json&include_drafts=false`
 - `POST /api/tools/verify-evidence`
 
-The last endpoint is a fixed business action, not a chat or arbitrary-prompt proxy. It requires a tenant identifier plus a question, proposed answer, and structured citations, then returns grounding, hallucination risk, contradictions, unsupported claims, citation integrity, cache status, and a request ID. Tenant-level call limits and metadata-only audit records apply. Provider credentials, model access, and generic prompt forwarding are never exposed. The same fixed operation is available through the optional MCP adapter:
+The last endpoint is a fixed business action, not a chat or arbitrary-prompt proxy. It requires a tenant identifier, a tenant-scoped project id, a question, a proposed answer, and structured citations. Every citation must match stored evidence in that project before it can be marked verified. The endpoint returns grounding, hallucination risk, contradictions, unsupported claims, citation integrity, cache status, and a request ID. Tenant-level call limits and metadata-only audit records apply. Provider credentials, model access, and generic prompt forwarding are never exposed. The same fixed operation is available through the optional MCP adapter:
 
 ```powershell
 .\.venv\Scripts\python.exe -m evidenceops.mcp_server
@@ -116,8 +129,6 @@ tests/             Parser, provider, workflow, API, and grounding tests
 examples/          Synthetic questionnaire and evidence fixtures
 docs/              Architecture, Devpost copy, demo script, and delivery template
 ```
-
-![EvidenceOps review workspace](docs/assets/evidenceops-demo.png)
 
 ## Submission and deployment notes
 

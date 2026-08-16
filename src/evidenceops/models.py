@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Literal
 
@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, model_validator
 
 
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 class DocumentKind(str, Enum):
@@ -103,7 +103,7 @@ class AddQuestionsRequest(BaseModel):
     text: str | None = Field(default=None, max_length=200_000)
 
     @model_validator(mode="after")
-    def require_content(self) -> "AddQuestionsRequest":
+    def require_content(self) -> AddQuestionsRequest:
         if not self.questions and not (self.text and self.text.strip()):
             raise ValueError("Provide at least one question or questionnaire text")
         return self
@@ -130,11 +130,11 @@ class CitationInput(BaseModel):
 
 class VerifyEvidenceRequest(BaseModel):
     tenant_id: str = Field(min_length=1, max_length=64, pattern=r"^[a-zA-Z0-9_-]+$")
+    project_id: str = Field(min_length=1, max_length=128)
     request_id: str | None = Field(default=None, min_length=1, max_length=128)
     question: str = Field(min_length=1, max_length=10_000)
     answer: str = Field(min_length=1, max_length=20_000)
     citations: list[CitationInput] = Field(min_length=1, max_length=20)
-    project_id: str | None = None
 
 
 class CitationIntegrity(BaseModel):

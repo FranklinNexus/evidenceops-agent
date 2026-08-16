@@ -1668,6 +1668,7 @@ input[type="radio"] {
   .workspace {
     display: block;
     height: calc(100vh - var(--header-height));
+    overflow: hidden;
     position: relative;
   }
 

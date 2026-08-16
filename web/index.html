@@ -11,9 +11,9 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/web/styles.css?v=0.1.0" />
+    <link rel="stylesheet" href="/web/styles.css?v=20260816" />
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
-    <script src="/web/app.js?v=0.1.0" defer></script>
+    <script src="/web/app.js?v=20260816" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to workspace</a>
@@ -72,9 +72,9 @@
             <span class="required-label">Required</span>
           </div>
           <label class="dropzone" id="questionnaireDropzone" for="questionnaireInput" tabindex="0">
-            <input id="questionnaireInput" type="file" accept=".xlsx,.xls,.csv,.pdf,.docx" hidden />
+            <input id="questionnaireInput" type="file" accept=".xlsx,.csv,.pdf,.docx,.txt,.md" hidden />
             <span class="dropzone-icon"><i data-lucide="file-up"></i></span>
-            <span><strong>Drop or choose a file</strong><small>XLSX, CSV, PDF, or DOCX</small></span>
+            <span><strong>Drop or choose a file</strong><small>PDF, XLSX, CSV, DOCX, TXT, or MD</small></span>
           </label>
           <div class="file-row questionnaire-file" id="questionnaireFile">
             <span class="file-type xlsx">XL</span>
@@ -108,7 +108,7 @@
               <h2 id="run-label">Agent run</h2>
               <p id="runTimestamp">Last run today, 14:32</p>
             </div>
-            <span class="provider-state" title="Model provider connected"><span></span> Online</span>
+            <span class="provider-state" id="providerState" title="Evidence-only demo provider"><span></span> Evidence-only demo</span>
           </div>
           <ol class="pipeline" id="pipeline" aria-label="Pipeline stages">
             <li class="complete"><i data-lucide="check"></i><span>Extract questions</span><small>42</small></li>
@@ -201,9 +201,9 @@
                 <span class="eyebrow">Agent draft</span>
                 <h3 id="answer-heading">Proposed answer</h3>
               </div>
-              <div class="confidence" id="confidenceBadge" title="Confidence is based on evidence coverage and verification checks">
+              <div class="confidence" id="coverageBadge" title="Evidence coverage is a heuristic based on citation and grounding checks; it is not model confidence.">
                 <span class="confidence-dot"></span>
-                <span><strong id="confidenceValue">92%</strong> confidence</span>
+                <span><strong id="coverageValue">92%</strong> evidence coverage</span>
               </div>
             </div>
             <textarea id="answerEditor" rows="7" aria-label="Proposed answer"></textarea>
@@ -221,7 +221,7 @@
                 <span class="eyebrow">Verification</span>
                 <h3 id="verification-heading">Evidence &amp; checks</h3>
               </div>
-              <span class="claim-count" id="claimCount">3 claims verified</span>
+              <span class="claim-count" id="claimCount">1 citation linked</span>
             </div>
             <div class="flag-list" id="flagList"></div>
             <div class="citation-list" id="citationList"></div>

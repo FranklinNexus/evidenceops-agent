@@ -24,7 +24,7 @@ The Agents for Humans Hackathon requires a publicly viewable video no longer tha
 
 **Say:**
 
-"A security questionnaire looks like a writing task, but the real job is evidence control. Every answer needs a current source, conflicts need review, and missing proof must stay missing. EvidenceOps is an MVP that turns a questionnaire and an organization's own evidence into cited drafts, then keeps a human in charge of approval and export."
+"No evidence, no answer. A security questionnaire looks like a writing task, but the real job is evidence control. Every answer needs a current source, conflicts need review, and missing proof must stay missing. EvidenceOps turns a questionnaire and an organization's own evidence into cited drafts, then keeps a human in charge of approval and export."
 
 ## 0:25-0:55 - Set the trust boundary
 
@@ -109,7 +109,7 @@ becomes an uncited answer."
 
 **Say:**
 
-"EvidenceOps makes evidence, uncertainty, and human approval part of one workflow. This hackathon MVP proves the loop from upload to cited export, with a clear path to AgentCore and AWS-managed storage when the project is ready to deploy."
+"EvidenceOps is the agent that knows when not to answer. It makes evidence, uncertainty, and human approval part of one workflow, from upload to cited export, with a clear path to AgentCore and AWS-managed storage when the project is ready to deploy."
 
 ## Recording checklist
 

@@ -1,122 +1,156 @@
 # EvidenceOps
 
-**Tagline:** Turn compliance and RFP questionnaires into cited, human-approved answer drafts.
+**Tagline:** No evidence, no answer. Turn compliance questionnaires into cited drafts with a human approval gate.
 
-> **MVP disclosure:** EvidenceOps is a review assistant, not a compliance certification service or an autonomous submission tool. It drafts from organization-supplied evidence, exposes gaps and conflicts, and requires human approval.
+## Elevator pitch
 
-## Verified hackathon facts
+EvidenceOps is the agent that knows when not to answer.
 
-Verified against the official Agents for Humans Hackathon pages on 2026-08-15:
+It turns a security, compliance, or RFP questionnaire plus an organization-controlled evidence library into cited answer drafts, contradiction findings, missing-evidence requests, a human review queue, and an exportable response set. Every factual answer must resolve to supplied evidence. Unsupported claims stay blocked.
 
-- The submission period runs from August 10, 2026 at 9:00 AM PT through September 14, 2026 at 5:00 PM PT.
-- The entry must be a new project created during the submission period. EvidenceOps was started on August 11, 2026.
-- Strands Agents SDK is required. Amazon Bedrock AgentCore is optional and can strengthen the Technical Implementation score.
-- The submission needs a public source repository containing the project source, an MIT or Apache license, a README, and an architecture diagram.
-- The demonstration video must be publicly viewable and no longer than five minutes.
-- An AWS Builder ID is required for participation.
-- Five Stage Two criteria are equally weighted: Technical Implementation, Design, Potential Impact, Creativity and Originality, and Presentation.
+## Inspiration
 
-Official sources: [overview](https://agentsforhumans.devpost.com/), [rules](https://agentsforhumans.devpost.com/rules), [dates](https://agentsforhumans.devpost.com/details/dates), and [FAQ](https://agentsforhumans.devpost.com/details/faqs).
+Security questionnaires look like writing work, but the expensive part is evidence control. Teams repeatedly search policies, audit reports, architecture documents, and previously approved responses to prove that every statement is current and consistent.
 
-Video upload, AWS Builder ID sign-in, registration, eligibility confirmation, and final submission remain project-owner actions.
+A polished answer without a source is worse than a blank field: it can create contractual, audit, and trust risk. We built EvidenceOps around a simple operating principle: uploaded documents are evidence; generated text is not.
 
-**Development disclosure:** EvidenceOps was created during the submission period with implementation and documentation assistance from OpenAI Codex. It does not incorporate a pre-existing EvidenceOps product or private customer code.
+## What it does
 
-## The problem
+EvidenceOps handles the questionnaire workflow end to end:
 
-Security and compliance teams repeatedly answer long questionnaires for customers, partners, and procurement teams. The knowledge already exists across policies, audit reports, architecture documents, and previously approved answers, but finding the precise passage is slow. The costly part is not typing: it is proving that each claim is current, supported, internally consistent, and approved by the right person.
+1. Ingest a questionnaire in PDF, XLSX, CSV, DOCX, Markdown, or text form.
+2. Parse it into traceable question records with source locations.
+3. Search only the uploaded evidence library for relevant passages.
+4. Use a Strands agent to draft a concise answer with selected citation indexes.
+5. Check the draft for unsupported claims, citation integrity, and conflicting evidence.
+6. Turn missing support into a specific evidence request instead of plausible prose.
+7. Require a person to approve, edit, or reject every answer.
+8. Export approved work as XLSX, CSV, or JSON with citations and reviewer notes.
 
-General-purpose text generation can make that problem worse. A fluent answer without a source is a liability. We built EvidenceOps around the opposite premise: uncertainty should become a visible work item, not confident prose.
+The application never distributes model credentials, exposes arbitrary prompt forwarding, or auto-submits an answer to a customer.
 
-## The solution
+## What the working demo proves
 
-EvidenceOps takes a questionnaire in PDF, XLSX, or DOCX form plus a customer-controlled evidence library. It then runs a reviewable workflow:
+The included synthetic CloudDesk review contains eight questions and four evidence documents. It deliberately exercises the cases that matter most:
 
-1. Extract the questionnaire into traceable question records.
-2. Retrieve relevant passages from the supplied evidence.
-3. Draft an answer with source citations.
-4. Check the draft for unsupported claims and conflicting evidence.
-5. Produce a missing-evidence list when support is insufficient.
-6. Send every item through a human approval queue.
-7. Export approved answers with status, citations, gaps, and reviewer notes.
+- A supported encryption answer resolves to its exact source quote.
+- Two incident-response documents disagree on a 48-hour versus 72-hour notification timeline. EvidenceOps shows both and blocks approval until a reviewer records a disposition.
+- No current subprocessor register exists in the evidence pack. The item stays unanswered and becomes a missing-evidence request.
+- Editing an approved answer clears the previous approval so stale sign-off cannot follow changed text.
+- Approved-only export prevents drafts and unresolved items from being presented as final.
 
-The product never treats generated text as evidence. When the evidence library cannot support a claim, EvidenceOps keeps the item blocked and describes what is needed.
+This is not a slideshow path. The repository includes the runnable Web workspace, API, synthetic fixtures, tests, architecture, and export implementation.
 
 ## How we built it
 
-The MVP uses the Strands Agents SDK for grounded drafting with typed structured output. A deterministic service coordinates question extraction, evidence retrieval, the Strands draft call, support checking, conflict detection, and gap classification. Deterministic application code retains ownership of file parsing, citation identity, workflow state, approval transitions, and export.
+The MVP uses Python, FastAPI, SQLite, and the Strands Agents SDK. A reusable `EvidenceOpsService` coordinates parsing, evidence retrieval, grounded drafting, verification, workflow state, human review, and export.
 
-The release gate installs Strands Agents 1.52.0 with boto3 and botocore, then runs a credential-free
-contract test through the real Strands `Agent`, OpenAI-compatible model adapter, typed output tool,
-and EvidenceOps grounding workflow. The local endpoint fixture proves the SDK integration; it is not
-presented as a third-party model-quality evaluation or Bedrock deployment.
+Strands owns the model-assisted drafting step. Deterministic code owns the high-risk controls:
 
-Model calls pass through a provider abstraction configured with `BASE_URL`, `API_KEY`, and a model identifier. This supports an OpenAI-compatible endpoint for the demo while keeping the domain workflow independent of a single provider. The boundary applies request throttling, bounded retry, a circuit breaker, and an evidence-only deterministic fallback. After a provider failure, fallback text quotes retrieved evidence instead of improvising; when retrieval finds no evidence, the item remains blocked.
+- document and citation identity;
+- questionnaire structure and source locations;
+- retrieval from the supplied evidence set;
+- support and numeric-conflict checks;
+- approval transitions and invalidation;
+- missing-evidence classification; and
+- approved-only export.
 
-That provider is internal infrastructure: EvidenceOps never distributes model keys or exposes arbitrary prompt/chat proxying. The public demo defaults to the deterministic provider and synthetic evidence; switching on a non-demo provider is a separate operator decision.
+The Strands provider accepts a narrow typed `AgentDraft` result: answer text plus zero-based evidence indexes. Invalid or missing indexes fail closed. A release-gate integration test starts a local OpenAI-compatible protocol fixture and runs the real Strands `Agent`, `OpenAIModel`, typed output tool, retrieval, and grounding path end to end. It proves the SDK integration without presenting a fixture as hosted-model quality evidence.
 
-The local-first MVP is designed for a clear AWS deployment path: Amazon S3 for encrypted documents and exports, DynamoDB for run and approval state, App Runner or ECS on Fargate for the service, OpenSearch Service or Knowledge Bases for Amazon Bedrock for larger-scale retrieval, Secrets Manager for provider credentials, CloudWatch for redacted telemetry, and an optional Amazon Bedrock model adapter.
+## Reliability and provider boundary
 
-See `docs/architecture.md` for the component diagram and the distinction between the implemented local MVP and optional managed-service deployment.
+Model access sits behind a provider abstraction supporting an operator-controlled OpenAI-compatible endpoint or Amazon Bedrock. The wrapper applies request throttling, bounded retry, a circuit breaker, and an evidence-only deterministic fallback.
+
+If the provider is unavailable, fallback output may quote retrieved evidence but cannot improvise. If retrieval finds no support, the question remains blocked. The public demo defaults to synthetic evidence and the deterministic provider; activating a hosted provider is a separate operator decision.
+
+The same service also exposes one restricted verification action through structured HTTP and an optional MCP adapter. It accepts a tenant-scoped project, question, proposed answer, and exact citations, then verifies every quote against stored project evidence. It is not a chat proxy. Tenant-separated limits, TTL caching, and metadata-only audit records apply.
 
 ## Challenges we ran into
 
-**Grounding at the claim level.** A retrieved paragraph may be related to a question without supporting the exact claim in a draft. We separated retrieval from verification and made citation presence, support status, and approval independent fields.
+### Retrieval is not proof
 
-**Preserving questionnaire structure.** Spreadsheet cells and document sections are part of the buyer's expected deliverable, not incidental formatting. We retain source locations and question identifiers so drafts can be mapped back to export targets.
+A passage can be related to a question without supporting every claim in a draft. We separated retrieval from grounding checks and made support status independent from model confidence.
 
-**Handling contradictions honestly.** Policies age at different rates. Silently choosing one source creates hidden risk, so the checker surfaces both passages and blocks the answer for a reviewer.
+### Contradictions should remain visible
 
-**Provider reliability.** Rate limits and transient failures should not erase work or encourage best-effort guessing. The adapter uses request throttling, bounded retries, a circuit breaker, and a deterministic evidence-only fallback.
+Policies age at different rates. Automatically choosing the more convenient source would hide risk, so EvidenceOps preserves both conflicting passages and requires a reviewer disposition.
 
-**Keeping the human in control.** The interface needs to make evidence fast to inspect while ensuring a draft never looks approved by default. Approval is an explicit persisted transition and is invalidated by later edits.
+### Human approval changes the data model
+
+Approval cannot be a decorative final button. Draft text, citations, checks, decision status, and reviewer notes are separate records. Any later answer edit invalidates the old approval.
+
+### Provider failure must not become factual failure
+
+Retries and fallback are useful only if fallback stays grounded. EvidenceOps degrades to evidence-only text or an explicit gap, never an uncited best guess.
 
 ## Accomplishments that we are proud of
 
-- Built a complete MVP path from heterogeneous questionnaire ingestion to export.
-- Made citations and missing evidence first-class workflow objects rather than annotations added at the end.
-- Added contradiction and unsupported-claim review before approval.
-- Preserved a human decision gate for every proposed answer.
-- Kept provider-specific code behind an adapter with throttling and failure handling.
-- Documented a practical AWS architecture without presenting future infrastructure as already deployed.
-- Prepared an open-source release checklist, architecture package, and reproducible synthetic demo fixtures.
+- Built the complete loop from heterogeneous document upload to reviewable export.
+- Made citations, conflicts, and missing evidence first-class workflow objects.
+- Added a persisted human approval gate with approval invalidation after edits.
+- Ran the real Strands SDK contract path in automated tests.
+- Kept provider credentials and generic prompt proxying outside the public interface.
+- Shipped a responsive review workspace, public MIT repository, synthetic fixtures, architecture package, and reproducible tests.
+- Reached 85% application coverage with 25 passing tests.
 
 ## What we learned
 
-The most useful behavior for high-stakes document work is often a well-structured refusal to guess: identify the unsupported claim, show what was searched, and ask for a specific source. Citations also need stable document identity and locators; a model-generated footnote is not enough.
+For high-stakes document work, the most valuable agent behavior is often a structured refusal to guess: identify the unsupported claim, show what was searched, and ask for the exact missing source.
 
-We also learned that human approval is not a final button bolted onto an agent. It changes the data model. Draft text, findings, review status, and reviewer notes need separate fields so the system can invalidate stale decisions and explain exactly what was exported.
-
-Finally, a provider abstraction is valuable for more than portability. It provides one place to enforce rate limits, retries, a circuit breaker, and evidence-only fallback behavior across every drafting call.
+We also learned that trustworthy citations require stable document identity and locators. A generated footnote is not evidence. Finally, human review works best when it is part of the workflow state, not a disclaimer added after generation.
 
 ## What's next
 
-Before submission, we will run the synthetic evaluation set, capture the five-minute demonstration, and optionally deploy the same Strands service through Amazon Bedrock AgentCore to strengthen the Technical Implementation score. Any deployment will preserve the provider boundary, citation checks, and final human approval gate shown in the local MVP.
+The next technical step is an optional AWS deployment that preserves the same trust boundary: Amazon S3 for encrypted documents and exports, DynamoDB for workflow state, CloudWatch for redacted telemetry, and AgentCore or a container service for the Strands runtime. Larger evidence sets could move to OpenSearch Service or Knowledge Bases for Amazon Bedrock.
+
+Production use would also add tenant authentication, role-based approval, malware scanning, retention controls, immutable audit logging, and organization-specific evaluation sets. These are future steps, not claims about the local MVP.
 
 ## Built with
 
-- Python
+- Python 3.11+
 - Strands Agents SDK
-- OpenAI-compatible model API
-- PDF, XLSX, and DOCX parsing
-- Structured evidence retrieval and citations
-- Human-in-the-loop review
-- Amazon S3 (deployment path)
-- Amazon DynamoDB (deployment path)
-- AWS App Runner / Amazon ECS on AWS Fargate (deployment path)
-- Amazon OpenSearch Service / Knowledge Bases for Amazon Bedrock (deployment path)
-- AWS Secrets Manager and Amazon CloudWatch (deployment path)
+- FastAPI and Pydantic
+- SQLite
+- OpenAI-compatible model adapter
+- Amazon Bedrock adapter
+- PDF, XLSX, CSV, and DOCX parsing
+- HTML, CSS, and JavaScript review workspace
+- pytest and pytest-cov
+- Optional MCP transport
+- AWS deployment path: AgentCore, S3, DynamoDB, CloudWatch, OpenSearch Service / Knowledge Bases for Amazon Bedrock
 
-## Suggested Devpost tags
+## Suggested tags
 
 `AI Agents` `Strands Agents` `AWS` `Compliance` `RFP Automation` `Human in the Loop` `Document AI` `Responsible AI` `Python` `Open Source`
 
-## Links
+## Submission fields
 
-- Hackathon: [Agents for Humans Hackathon](https://agentsforhumans.devpost.com/)
-- Official rules: [Rules](https://agentsforhumans.devpost.com/rules)
-- Official FAQ: [FAQ](https://agentsforhumans.devpost.com/details/faqs)
-- Repository: https://github.com/FranklinNexus/evidenceops-agent
-- Demo video: `PENDING-OWNER-ACTION: Upload the approved public video, then insert its URL.`
-- Architecture: https://github.com/FranklinNexus/evidenceops-agent/blob/main/docs/architecture.md
-- Devpost entry: `PENDING-OWNER-ACTION: Register or submit, then insert the project URL.`
+| Field | Value |
+| --- | --- |
+| Project name | `EvidenceOps` |
+| Track | `Professional Agents` |
+| Repository | https://github.com/FranklinNexus/evidenceops-agent |
+| Product image | `docs/assets/evidenceops-demo.png` |
+| Architecture image | `docs/assets/evidenceops-architecture.png` |
+| Architecture document | https://github.com/FranklinNexus/evidenceops-agent/blob/main/docs/architecture.md |
+| Demo video | Add the final public YouTube or Vimeo URL; maximum 5:00 |
+| Live demo | Optional; do not enter a localhost URL |
+| AWS Builder ID | Project owner enters the identity-bound email |
+
+## Disclosures
+
+EvidenceOps was created during the 2026 Agents for Humans Hackathon submission period with implementation and documentation assistance from OpenAI Codex. It does not incorporate a pre-existing EvidenceOps product or private customer code. The demonstration fixtures are synthetic.
+
+EvidenceOps assists document preparation. It is not a certification, audit opinion, legal determination, or autonomous submission system.
+
+## Rule check
+
+Verified against the official Agents for Humans Hackathon pages on 2026-08-16 (the rules page was updated on 2026-08-12):
+
+- Submission deadline: September 14, 2026 at 5:00 PM PT, shown as September 15, 2026 at 8:00 AM GMT+8.
+- Required: a new Strands project, public MIT or Apache repository, README, architecture diagram, public video no longer than five minutes, and AWS Builder ID.
+- Amazon Bedrock AgentCore and a public live demo are optional.
+- Submission materials must be in English or include an English translation.
+- The optional builder.aws bonus no longer requires the `#AgentsforHumans` hashtag; the title must still include `Agents for Humans`.
+
+Official sources: [overview](https://agentsforhumans.devpost.com/), [rules](https://agentsforhumans.devpost.com/rules), [dates](https://agentsforhumans.devpost.com/details/dates), and [FAQ](https://agentsforhumans.devpost.com/details/faqs).

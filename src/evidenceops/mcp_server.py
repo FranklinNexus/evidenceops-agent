@@ -17,10 +17,10 @@ def build_mcp_server() -> Any:
     @server.tool()
     def verify_evidence(
         tenant_id: str,
+        project_id: str,
         question: str,
         answer: str,
-        citations: list[dict[str, str]],
-        project_id: str | None = None,
+        citations: list[dict[str, Any]],
     ) -> dict[str, Any]:
         """Verify that an answer is grounded in exact document/location/quote citations."""
         result = service.verify_evidence(

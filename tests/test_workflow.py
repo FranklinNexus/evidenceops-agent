@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import json
 import io
+import json
 
 from fastapi.testclient import TestClient
 from openpyxl import load_workbook
@@ -11,6 +11,19 @@ def _project(client: TestClient) -> str:
     response = client.post("/api/projects", json={"name": "Acme Security Review"})
     assert response.status_code == 201
     return response.json()["id"]
+
+
+def test_workspace_and_health_expose_the_supported_demo_contract(client: TestClient) -> None:
+    health = client.get("/api/health")
+    workspace = client.get("/")
+
+    assert health.status_code == 200
+    assert health.json()["provider"]["active"] == "deterministic-demo"
+    assert workspace.status_code == 200
+    assert 'accept=".xlsx,.csv,.pdf,.docx,.txt,.md"' in workspace.text
+    assert 'accept=".xlsx,.xls,' not in workspace.text
+    assert "evidence coverage" in workspace.text
+    assert "Model provider connected" not in workspace.text
 
 
 def test_end_to_end_grounded_draft_review_and_export(client: TestClient) -> None:
@@ -209,6 +222,69 @@ def test_verify_evidence_tool_is_tenant_scoped_and_cached(client: TestClient) ->
 
     wrong_tenant = client.post("/api/tools/verify-evidence", json={**payload, "tenant_id": "tenant-b"})
     assert wrong_tenant.status_code == 404
+
+
+def test_verify_evidence_requires_stored_project_scope(client: TestClient) -> None:
+    response = client.post(
+        "/api/tools/verify-evidence",
+        json={
+            "tenant_id": "demo",
+            "question": "What is documented?",
+            "answer": "A fabricated answer.",
+            "citations": [{"document": "inline.txt", "page_or_sheet": "Line 1", "quote": "A fabricated answer."}],
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_new_evidence_invalidates_prior_approval(client: TestClient) -> None:
+    project_id = _project(client)
+    client.post(
+        f"/api/projects/{project_id}/documents?kind=evidence",
+        files=[("files", ("current.md", b"Customers are notified within 48 hours after a confirmed incident.", "text/markdown"))],
+    )
+    client.post(
+        f"/api/projects/{project_id}/questions",
+        json={"questions": ["When are customers notified after a confirmed incident?"]},
+    )
+    question = client.post(f"/api/projects/{project_id}/run").json()["questions"][0]
+    approved = client.patch(
+        f"/api/projects/{project_id}/questions/{question['id']}/review",
+        json={"action": "approve"},
+    )
+    assert approved.status_code == 200
+    assert client.get(f"/api/projects/{project_id}/export?format=json").json()
+
+    client.post(
+        f"/api/projects/{project_id}/documents?kind=evidence",
+        files=[("files", ("legacy.md", b"Customers are notified within 72 hours after a confirmed incident.", "text/markdown"))],
+    )
+    refreshed = client.get(f"/api/projects/{project_id}/questions").json()[0]
+    assert refreshed["status"] == "draft"
+    assert client.get(f"/api/projects/{project_id}/export?format=json").json() == []
+
+
+def test_exports_escape_formula_like_values(client: TestClient) -> None:
+    project_id = _project(client)
+    client.post(
+        f"/api/projects/{project_id}/documents?kind=evidence",
+        files=[("files", ("formula.txt", b"The documented formula is =1+1.", "text/plain"))],
+    )
+    client.post(
+        f"/api/projects/{project_id}/questions",
+        json={"questions": ["What is the documented formula?"]},
+    )
+    question = client.post(f"/api/projects/{project_id}/run").json()["questions"][0]
+    approved = client.patch(
+        f"/api/projects/{project_id}/questions/{question['id']}/review",
+        json={"action": "approve", "edited_answer": "=1+1"},
+    )
+    assert approved.status_code == 200
+
+    workbook = load_workbook(io.BytesIO(client.get(f"/api/projects/{project_id}/export?format=xlsx").content), data_only=False)
+    assert workbook.active["B2"].value == "'=1+1"
+    csv_text = client.get(f"/api/projects/{project_id}/export?format=csv").content.decode("utf-8-sig")
+    assert "'=1+1" in csv_text
 
 
 def test_questionnaire_upload_extracts_questions(client: TestClient) -> None:

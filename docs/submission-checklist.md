@@ -1,6 +1,6 @@
 # Agents for Humans Submission Checklist
 
-Verified against the official Devpost pages on 2026-08-15. Recheck the linked pages immediately before the final submission because organizers may update operational details.
+Verified against the official Devpost pages on 2026-08-16. Recheck the linked pages immediately before the final submission because organizers may update operational details.
 
 ## Already prepared locally
 

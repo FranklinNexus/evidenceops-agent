@@ -7,7 +7,6 @@ from collections.abc import Iterable
 
 from .models import Citation, Contradiction, EvidenceChecks, StoredChunk
 
-
 TOKEN_PATTERN = re.compile(r"[a-z0-9]+|[\u4e00-\u9fff]", re.IGNORECASE)
 SENTENCE_PATTERN = re.compile(r"(?<=[.!?。！？])\s+|\n+")
 STOPWORDS = {
@@ -24,9 +23,14 @@ MEASURE_PATTERN = re.compile(
     r"\b(\d+(?:\.\d+)?)\s*(hours?|hrs?|days?|minutes?|mins?|seconds?|secs?|%)\b",
     re.IGNORECASE,
 )
+NUMBER_PATTERN = re.compile(r"\b\d+(?:\.\d+)?%?\b")
+STRICT_QUALIFIERS = {
+    "all", "always", "any", "entire", "every", "exclusively", "fully", "guaranteed", "must", "never",
+    "none", "only", "shall", "without",
+}
 GENERIC_QUERY_TERMS = {
     "compliant", "confirm", "control", "controls", "current", "data", "describe", "detail", "enabled", "explain",
-    "implemented", "information", "list", "policy", "process", "production", "provide", "security", "state",
+    "implemented", "information", "list", "long", "policy", "process", "production", "provide", "security", "state",
     "support", "supports", "system",
 }
 TOKEN_ALIASES = {
@@ -62,6 +66,32 @@ def tokenize(text: str) -> list[str]:
     ]
 
 
+def _measurements(text: str) -> set[tuple[str, str]]:
+    aliases = {
+        "hr": "hour",
+        "hrs": "hour",
+        "hour": "hour",
+        "hours": "hour",
+        "day": "day",
+        "days": "day",
+        "min": "minute",
+        "mins": "minute",
+        "minute": "minute",
+        "minutes": "minute",
+        "sec": "second",
+        "secs": "second",
+        "second": "second",
+        "seconds": "second",
+        "%": "%",
+    }
+    return {(value, aliases[unit.casefold()]) for value, unit in MEASURE_PATTERN.findall(text)}
+
+
+def _evidence_claims(text: str) -> list[str]:
+    claims = [item.strip() for item in SENTENCE_PATTERN.split(text) if item.strip()]
+    return claims or [text]
+
+
 def _best_quote(question: str, text: str, max_chars: int = 420) -> str:
     question_tokens = set(tokenize(question))
     sentences = [
@@ -95,6 +125,7 @@ def _best_quote(question: str, text: str, max_chars: int = 420) -> str:
 def retrieve(question: str, chunks: Iterable[StoredChunk], top_k: int = 4) -> list[Citation]:
     chunk_list = list(chunks)
     query_counts = Counter(tokenize(question))
+    distinctive_query_tokens = set(query_counts) - GENERIC_QUERY_TERMS
     if not query_counts or not chunk_list:
         return []
     document_frequency: Counter[str] = Counter()
@@ -106,7 +137,6 @@ def retrieve(question: str, chunks: Iterable[StoredChunk], top_k: int = 4) -> li
     scored: list[tuple[float, StoredChunk]] = []
     for chunk, tokens in zip(chunk_list, tokenized_chunks, strict=True):
         counts = Counter(tokens)
-        distinctive_query_tokens = set(query_counts) - GENERIC_QUERY_TERMS
         required_matches = max(1, math.ceil(len(distinctive_query_tokens) * 0.35))
         if distinctive_query_tokens and len(distinctive_query_tokens.intersection(counts)) < required_matches:
             continue
@@ -138,6 +168,15 @@ def retrieve(question: str, chunks: Iterable[StoredChunk], top_k: int = 4) -> li
                 relevance_score=round(score, 4),
             )
         )
+    if distinctive_query_tokens:
+        cited_tokens = {
+            token
+            for citation in citations
+            for token in tokenize(citation.quote)
+        }
+        required_coverage = max(1, math.ceil(len(distinctive_query_tokens) * 0.8))
+        if len(distinctive_query_tokens.intersection(cited_tokens)) < required_coverage:
+            return []
     return citations
 
 
@@ -189,27 +228,44 @@ def analyze_grounding(answer: str | None, citations: list[Citation]) -> Evidence
             unsupported_claims=[answer] if answer else [],
             contradictions=contradictions,
         )
-    evidence_text = "\n".join(citation.quote for citation in citations)
-    evidence_normalized = re.sub(r"\s+", " ", evidence_text).casefold()
-    evidence_tokens = set(tokenize(evidence_text))
     unsupported: list[str] = []
     for sentence in [item.strip() for item in SENTENCE_PATTERN.split(answer) if item.strip()]:
         normalized = re.sub(r"\s+", " ", sentence).casefold().strip(' \"\'')
+        claim_text = sentence
         if normalized.startswith(("the evidence states:", "evidence excerpt:", "available evidence states:")):
-            normalized = normalized.split(":", 1)[1].strip(' \"\'')
-        if normalized and normalized in evidence_normalized:
-            continue
-        material_tokens = set(tokenize(sentence))
-        numbers = set(re.findall(r"\b\d+(?:\.\d+)?%?\b", sentence))
-        best_citation = max(
-            citations,
-            key=lambda citation: len(material_tokens.intersection(tokenize(citation.quote))),
-        )
-        best_tokens = set(tokenize(best_citation.quote))
-        best_numbers = set(re.findall(r"\b\d+(?:\.\d+)?%?\b", best_citation.quote))
-        polarity_mismatch = bool(material_tokens.intersection(NEGATIVE)) != bool(best_tokens.intersection(NEGATIVE))
-        coverage = len(material_tokens.intersection(evidence_tokens)) / max(len(material_tokens), 1)
-        if polarity_mismatch or numbers - best_numbers or (material_tokens and coverage < 0.72):
+            prefix_end = sentence.find(":")
+            claim_text = sentence[prefix_end + 1 :].strip(' \"\'')
+            normalized = re.sub(r"\s+", " ", claim_text).casefold().strip(' \"\'')
+        material_tokens = set(tokenize(claim_text))
+        numbers = set(NUMBER_PATTERN.findall(claim_text))
+        measures = _measurements(claim_text)
+        qualifiers = material_tokens.intersection(STRICT_QUALIFIERS)
+        supported = False
+        for citation in citations:
+            for evidence_claim in _evidence_claims(citation.quote):
+                citation_normalized = re.sub(r"\s+", " ", evidence_claim).casefold().strip(' \"\'')
+                if normalized and normalized in citation_normalized:
+                    supported = True
+                    break
+                citation_tokens = set(tokenize(evidence_claim))
+                citation_numbers = set(NUMBER_PATTERN.findall(evidence_claim))
+                citation_measures = _measurements(evidence_claim)
+                polarity_mismatch = bool(material_tokens.intersection(NEGATIVE)) != bool(
+                    citation_tokens.intersection(NEGATIVE)
+                )
+                coverage = len(material_tokens.intersection(citation_tokens)) / max(len(material_tokens), 1)
+                if (
+                    not polarity_mismatch
+                    and not (numbers - citation_numbers)
+                    and not (measures - citation_measures)
+                    and not (qualifiers - citation_tokens)
+                    and (not material_tokens or coverage >= 0.78)
+                ):
+                    supported = True
+                    break
+            if supported:
+                break
+        if not supported:
             unsupported.append(sentence)
     return EvidenceChecks(
         grounded=not unsupported,
