@@ -25,7 +25,7 @@ This project was created during the 2026 Agents for Humans Hackathon submission 
 2. Upload the approved evidence library.
 3. Run the workflow to extract questions, retrieve evidence, draft answers, and check support and contradictions.
 4. Review every item with its exact source, page or sheet, and quote.
-5. Approve, edit, reject, or request missing evidence.
+5. Approve, edit, reject, or follow the generated missing-evidence request.
 6. Export approved work as XLSX, CSV, or JSON.
 
 The synthetic fixtures in `examples/` intentionally include grounded answers, a superseded source conflict, and evidence gaps. They make the complete workflow demonstrable without using customer data or an external model account.
@@ -41,6 +41,10 @@ python -m venv .venv
 ```
 
 Open `http://127.0.0.1:8000`. API documentation is at `http://127.0.0.1:8000/docs`.
+
+On a fresh data directory, click **Load synthetic demo**. The browser asks the API to create a real
+project, ingest the files under `examples/`, and run the same retrieval, drafting, verification, and
+review workflow used for uploaded documents.
 
 On macOS or Linux, replace `.\.venv\Scripts\python.exe` with `.venv/bin/python`.
 
@@ -91,6 +95,7 @@ FastAPI, tests, and the optional MCP transport all call the same `EvidenceOpsSer
 
 Core endpoints:
 
+- `POST /api/demo` (creates the repository-owned synthetic walkthrough)
 - `POST /api/projects`
 - `POST /api/projects/{project_id}/documents?kind=questionnaire|evidence`
 - `POST /api/projects/{project_id}/run`

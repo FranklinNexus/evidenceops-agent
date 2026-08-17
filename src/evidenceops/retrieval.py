@@ -12,7 +12,7 @@ SENTENCE_PATTERN = re.compile(r"(?<=[.!?。！？])\s+|\n+")
 STOPWORDS = {
     "a", "an", "and", "are", "as", "at", "be", "by", "can", "do", "does", "for", "from", "how",
     "in", "is", "it", "of", "on", "or", "our", "please", "that", "the", "their", "this", "to", "what",
-    "when", "where", "which", "who", "will", "with", "your",
+    "when", "where", "which", "who", "will", "with", "you", "your",
 }
 NEGATIVE = {
     "no", "not", "never", "none", "disabled", "false", "without", "cannot", "isn't", "isnt", "doesn't",
@@ -38,6 +38,11 @@ TOKEN_ALIASES = {
     "encrypted": "encrypt",
     "encrypts": "encrypt",
     "encryption": "encrypt",
+    "enforced": "require",
+    "requires": "require",
+    "required": "require",
+    "commissions": "perform",
+    "commission": "perform",
     "models": "model",
     "notification": "notify",
     "notified": "notify",
@@ -46,6 +51,8 @@ TOKEN_ALIASES = {
     "storage": "store",
     "trained": "train",
     "training": "train",
+    "used": "use",
+    "uses": "use",
 }
 
 

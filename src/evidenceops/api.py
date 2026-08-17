@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from .config import Settings
+from .demo import demo_files
 from .models import (
     AddQuestionsRequest,
     CreateProjectRequest,
@@ -75,6 +76,36 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @router.get("/projects")
     def list_projects(request: Request):
         return get_service(request).store.list_projects()
+
+    @router.post("/demo", status_code=201)
+    def create_synthetic_demo(request: Request):
+        service = get_service(request)
+        try:
+            questionnaire, evidence_files = demo_files()
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+        project = service.store.create_project("CloudDesk Synthetic Review")
+        service.upload_document(
+            project.id,
+            filename=questionnaire[0],
+            data=questionnaire[1],
+            kind=DocumentKind.questionnaire,
+            content_type="text/csv",
+        )
+        for filename, data in evidence_files:
+            service.upload_document(
+                project.id,
+                filename=filename,
+                data=data,
+                kind=DocumentKind.evidence,
+                content_type="text/markdown",
+            )
+        return {
+            "project": project,
+            "documents": service.store.list_documents(project.id),
+            "questions": service.store.list_questions(project.id),
+        }
 
     @router.get("/projects/{project_id}")
     def get_project(project_id: str, request: Request):

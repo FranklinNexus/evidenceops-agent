@@ -1,6 +1,6 @@
 # Runtime Validation
 
-Validated on 2026-08-16 with Python 3.13.13.
+Validated on 2026-08-17 with Python 3.13.13.
 
 ## Installed release-gate dependencies
 
@@ -39,6 +39,6 @@ for the final video requires separately approved credentials and must keep those
 ## Full suite result
 
 ```text
-25 passed
-85% application coverage
+28 passed
+88% application coverage
 ```

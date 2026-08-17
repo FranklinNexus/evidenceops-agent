@@ -1,8 +1,8 @@
 # Agents for Humans Hackathon Compliance
 
-Verified against the official Devpost pages on 2026-08-16. The event remains open, Devpost shows
-2,416 participants, and the project gallery has not yet been published, so a current public
-submission count is not available.
+Verified against the official Devpost rules on 2026-08-17. The event remains open and the rules
+still show the submission deadline below. Participant counts change continuously and are not used
+as a release criterion.
 
 ## Official timeline
 
@@ -28,18 +28,18 @@ submission count is not available.
 
 | Official requirement | Repository evidence | Status |
 | --- | --- | --- |
-| New agent using Strands Agents SDK | `src/evidenceops/`, dependency manifest, and `tests/test_strands_integration.py` | Complete locally |
-| Complete working project | Web app, API, local fallback, tests | Complete locally |
-| Text description | `docs/devpost.md` | In progress |
+| New agent using Strands Agents SDK | `src/evidenceops/`, dependency manifest, and `tests/test_strands_integration.py` | Complete and verified |
+| Complete working project | Web app, API, local fallback, tests | Complete and verified |
+| Text description | `docs/devpost.md` and saved Devpost draft | Complete |
 | Public repository URL | https://github.com/FranklinNexus/evidenceops-agent | Complete; public MIT repository verified |
-| All source, assets, and setup instructions | Repository plus `README.md` | Complete locally |
-| MIT or Apache license | `LICENSE` (MIT) | Complete locally |
-| README | `README.md` | Complete locally |
-| Architecture diagram | `docs/architecture.md` and `docs/assets/evidenceops-architecture.png` | Complete locally |
-| Public YouTube/Vimeo video, maximum 5 minutes | `docs/demo-script.md` is the recording plan | Recording and publication required |
-| Video demonstrates working project | Script covers the full evidence-to-export flow | In progress |
-| Pitch covers problem, audience, and importance | Devpost copy and demo script | In progress |
-| AWS Builder ID | Not collected | User action required |
+| All source, assets, and setup instructions | Repository plus `README.md` | Complete |
+| MIT or Apache license | `LICENSE` (MIT), detected by GitHub | Complete |
+| README | `README.md` | Complete |
+| Architecture diagram | `docs/architecture.md` and `docs/assets/evidenceops-architecture.png`; attached to draft | Complete |
+| Public YouTube/Vimeo video, maximum 5 minutes | `docs/demo-script.md` and local video asset | Publication URL required |
+| Video demonstrates working project | Final 4:52 local video covers the full evidence-to-export flow | Media QA complete; public URL required |
+| Pitch covers problem, audience, and importance | Devpost copy and demo script | Complete |
+| AWS Builder ID | Identity-bound email field | Project owner enters it on Devpost |
 | Optional live demo | Local demo only | Deployment decision required |
 | AWS account | Required by official FAQ | User action required |
 | Optional builder.aws post with `Agents for Humans` in the title | Not published | Optional; do not delay submission |
@@ -60,13 +60,13 @@ the deadline. The official rules were updated on 2026-08-12 to remove the
 
 ## Actions deliberately not performed
 
-- Devpost registration or submission.
-- AWS credit request.
 - Final Devpost submission.
+- AWS credit request.
 - AWS deployment or creation of paid resources.
-- Uploading or publishing the demo video or builder.aws post.
+- Publishing the demo video or builder.aws post.
 
-Identity and final-submission actions remain with the project owner.
+Devpost registration and the submission draft are complete. Identity, eligibility confirmation,
+public video publication, and final submission remain with the project owner.
 
 ## Official sources
 

@@ -34,6 +34,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   height: 100%;
@@ -535,6 +539,11 @@ textarea {
 .file-type.xlsx {
   background: var(--green-soft);
   color: var(--green);
+}
+
+.file-type.csv {
+  background: var(--cyan-soft);
+  color: var(--cyan);
 }
 
 .file-type.txt {

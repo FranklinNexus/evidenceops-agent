@@ -11,9 +11,9 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/web/styles.css?v=20260816" />
+    <link rel="stylesheet" href="/web/styles.css?v=20260817-2" />
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
-    <script src="/web/app.js?v=20260816" defer></script>
+    <script src="/web/app.js?v=20260817-2" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to workspace</a>
@@ -32,7 +32,7 @@
           <span class="project-signal"></span>
           <span>
             <small>Active project</small>
-            <strong id="projectName">Northstar Security Review</strong>
+            <strong id="projectName">CloudDesk Synthetic Review</strong>
           </span>
           <i data-lucide="chevron-down" aria-hidden="true"></i>
         </button>
@@ -76,7 +76,7 @@
             <span class="dropzone-icon"><i data-lucide="file-up"></i></span>
             <span><strong>Drop or choose a file</strong><small>PDF, XLSX, CSV, DOCX, TXT, or MD</small></span>
           </label>
-          <div class="file-row questionnaire-file" id="questionnaireFile">
+          <div class="file-row questionnaire-file" id="questionnaireFile" hidden>
             <span class="file-type xlsx">XL</span>
             <span class="file-meta">
               <strong>Acme_RFP_2026.xlsx</strong>
@@ -288,6 +288,11 @@
             <input type="radio" name="export-format" value="xlsx" checked />
             <span class="file-type xlsx">XL</span>
             <span><strong>Excel workbook</strong><small>Answers, citations, and review status</small></span>
+          </label>
+          <label class="format-choice">
+            <input type="radio" name="export-format" value="csv" />
+            <span class="file-type csv">CSV</span>
+            <span><strong>CSV</strong><small>Portable rows for questionnaire tools</small></span>
           </label>
           <label class="format-choice">
             <input type="radio" name="export-format" value="json" />

@@ -26,6 +26,27 @@ def test_workspace_and_health_expose_the_supported_demo_contract(client: TestCli
     assert "Model provider connected" not in workspace.text
 
 
+def test_synthetic_demo_endpoint_seeds_real_project_files(client: TestClient) -> None:
+    seeded = client.post("/api/demo")
+
+    assert seeded.status_code == 201
+    payload = seeded.json()
+    assert payload["project"]["name"] == "CloudDesk Synthetic Review"
+    assert len(payload["questions"]) == 8
+    assert {document["kind"] for document in payload["documents"]} == {"questionnaire", "evidence"}
+
+    run = client.post(f"/api/projects/{payload['project']['id']}/run")
+    assert run.status_code == 200
+    result = run.json()
+    assert result["processed"] == 8
+    assert result["draft_count"] == 7
+    assert result["needs_evidence_count"] == 1
+    conflict = next(question for question in result["questions"] if "incident notification" in question["question"])
+    missing = next(question for question in result["questions"] if "subprocessors" in question["question"])
+    assert conflict["checks"]["contradictions"]
+    assert missing["answer"] is None
+
+
 def test_end_to_end_grounded_draft_review_and_export(client: TestClient) -> None:
     project_id = _project(client)
     upload = client.post(
@@ -81,6 +102,40 @@ def test_export_excludes_unapproved_answers_by_default(client: TestClient) -> No
         client.get(f"/api/projects/{project_id}/export?format=json&include_drafts=true").content
     )
     assert len(drafts) == 1
+
+
+def test_rejected_answer_can_return_to_draft_and_be_regenerated(client: TestClient) -> None:
+    project_id = _project(client)
+    client.post(
+        f"/api/projects/{project_id}/documents?kind=evidence",
+        files=[("files", ("security.txt", b"MFA is enabled for administrators.\n", "text/plain"))],
+    )
+    added = client.post(
+        f"/api/projects/{project_id}/questions",
+        json={"questions": ["Is MFA enabled for administrators?"]},
+    ).json()
+    question_id = added["questions"][0]["id"]
+    client.post(f"/api/projects/{project_id}/run")
+
+    rejected = client.patch(
+        f"/api/projects/{project_id}/questions/{question_id}/review",
+        json={"action": "reject", "note": "Tighten the wording."},
+    )
+    assert rejected.json()["status"] == "rejected"
+
+    reopened = client.patch(
+        f"/api/projects/{project_id}/questions/{question_id}",
+        json={"edited_answer": "MFA is enabled for administrators.", "note": "Revised."},
+    )
+    assert reopened.json()["status"] == "draft"
+
+    client.patch(
+        f"/api/projects/{project_id}/questions/{question_id}/review",
+        json={"action": "reject", "note": "Regenerate from evidence."},
+    )
+    rerun = client.post(f"/api/projects/{project_id}/run").json()
+    assert rerun["processed"] == 1
+    assert rerun["questions"][0]["status"] == "draft"
 
 
 def test_approval_rejects_unsupported_human_edit(client: TestClient) -> None:

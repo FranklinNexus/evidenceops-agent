@@ -37,6 +37,7 @@ packages = ["src/evidenceops"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "web" = "evidenceops/web"
+"examples" = "evidenceops/examples"
 
 [tool.pytest.ini_options]
 addopts = "-q --disable-warnings"

@@ -103,7 +103,7 @@ class EvidenceOpsService:
         questions = self.store.list_questions(project_id)
         processed = 0
         for question in questions:
-            if question.status in {ReviewStatus.approved, ReviewStatus.rejected}:
+            if question.status == ReviewStatus.approved:
                 continue
             citations = retrieve(question.question, chunks, self.settings.retrieval_top_k)
             if not citations:
@@ -179,7 +179,9 @@ class EvidenceOpsService:
         answer = draft.edited_answer if draft.edited_answer is not None else question.answer
         checks = analyze_grounding(answer, question.citations)
         status = question.status
-        if status == ReviewStatus.approved and (answer != question.answer or draft.note != question.reviewer_note):
+        if status in {ReviewStatus.approved, ReviewStatus.rejected} and (
+            answer != question.answer or draft.note != question.reviewer_note
+        ):
             status = ReviewStatus.draft
         return self.store.update_question(
             project_id,

@@ -11,6 +11,7 @@ from evidenceops.providers import (
     ResilientProvider,
     StrandsBedrockProvider,
     StrandsOpenAIProvider,
+    _validated_citation_indexes,
     build_provider,
 )
 
@@ -62,3 +63,15 @@ def test_provider_configuration_routes_without_external_calls() -> None:
     assert isinstance(bedrock, ResilientProvider)
     assert isinstance(bedrock.primary, StrandsBedrockProvider)
     assert bedrock.primary.region == "us-east-1"
+
+
+def test_strands_citation_indexes_fail_closed() -> None:
+    assert _validated_citation_indexes([1, 0, 1], 2) == [0, 1]
+
+    for indexes in ([], [0, 2], [-1, 0]):
+        try:
+            _validated_citation_indexes(indexes, 2)
+        except RuntimeError as exc:
+            assert "invalid citation indexes" in str(exc)
+        else:
+            raise AssertionError(f"Expected invalid indexes to fail: {indexes}")

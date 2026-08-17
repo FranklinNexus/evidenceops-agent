@@ -317,9 +317,9 @@ const STATUS_LABELS = {
 };
 
 const state = {
-  questions: DEMO_QUESTIONS.map((question) => structuredClone(question)),
-  evidence: DEMO_EVIDENCE.map((file) => ({ ...file })),
-  selectedId: DEMO_QUESTIONS[0].id,
+  questions: [],
+  evidence: [],
+  selectedId: null,
   projectId: null,
   demoMode: true,
   search: "",
@@ -535,7 +535,12 @@ async function hydrateFromApi() {
     renderProviderState();
   }
   const projects = await apiRequest("/api/projects", { method: "GET" });
-  if (!Array.isArray(projects) || projects.length === 0) return;
+  if (!Array.isArray(projects) || projects.length === 0) {
+    dom.questionnaireFile.hidden = true;
+    renderEvidence();
+    renderAll();
+    return;
+  }
   await loadProject(projects[0].id);
 }
 
@@ -672,6 +677,7 @@ function renderAll() {
   renderReview();
   if (!state.running) renderPipelineSummary();
   dom.questionCount.textContent = state.questions.length;
+  dom.exportButton.disabled = state.questions.length === 0;
 }
 
 function renderProviderState() {
@@ -707,9 +713,10 @@ function renderPipelineSummary() {
     )
     .join("");
 
-  dom.runButton.disabled = total === 0;
-  dom.runButton.innerHTML = `<i data-lucide="${hasRun ? "rotate-cw" : "play"}"></i><span>${hasRun ? "Run again" : "Run questionnaire"}</span>`;
-  if (state.demoMode) dom.runTimestamp.textContent = "Synthetic demo dataset";
+  dom.runButton.disabled = total === 0 && !state.demoMode;
+  const runLabel = state.demoMode ? "Load synthetic demo" : hasRun ? "Run again" : "Run questionnaire";
+  dom.runButton.innerHTML = `<i data-lucide="${hasRun ? "rotate-cw" : "play"}"></i><span>${runLabel}</span>`;
+  if (state.demoMode) dom.runTimestamp.textContent = "No saved run";
   else if (hasRun) dom.runTimestamp.textContent = "Saved run loaded";
   else dom.runTimestamp.textContent = "Ready after evidence upload";
   refreshIcons();
@@ -762,6 +769,13 @@ function renderQueue() {
   const questions = filteredQuestions();
   dom.questionList.innerHTML = "";
   dom.emptyState.hidden = questions.length !== 0;
+  if (questions.length === 0) {
+    const title = dom.emptyState.querySelector("strong");
+    const detail = dom.emptyState.querySelector("span");
+    const workspaceIsEmpty = state.questions.length === 0;
+    title.textContent = workspaceIsEmpty ? "No questions yet" : "No matching questions";
+    detail.textContent = workspaceIsEmpty ? "Load the synthetic demo or upload a questionnaire." : "Change your search or status filters.";
+  }
 
   questions.forEach((question) => {
     const button = document.createElement("button");
@@ -819,10 +833,12 @@ function renderReview() {
     dom.nextQuestion.disabled = true;
     dom.approveButton.disabled = true;
     dom.rejectButton.disabled = true;
+    dom.regenerateButton.disabled = true;
     updateWordCount();
     return;
   }
   dom.answerEditor.disabled = false;
+  dom.regenerateButton.disabled = false;
   dom.answerEditor.placeholder = "";
   dom.reviewerNote.disabled = false;
   dom.rejectButton.disabled = false;
@@ -1025,7 +1041,7 @@ async function setDecision(status) {
     question.status = status;
   }
   renderAll();
-  showToast(status === "approved" ? "Answer approved for export" : "Answer returned for revision", status === "approved" ? "success" : "warning");
+  showToast(status === "approved" ? "Answer approved for export" : "Answer rejected and queued for revision", status === "approved" ? "success" : "warning");
 }
 
 async function reviewQuestion(question, status) {
@@ -1169,6 +1185,29 @@ async function runPipeline() {
   dom.runButton.disabled = true;
   dom.runButton.innerHTML = '<span class="step-spinner"></span><span>Agent running</span>';
 
+  if (state.demoMode) {
+    const seeded = await apiRequest("/api/demo", { method: "POST", timeoutMs: 60000 });
+    if (!seeded || seeded._error) {
+      dom.runButton.disabled = false;
+      dom.runButton.innerHTML = '<i data-lucide="play"></i><span>Retry demo load</span>';
+      state.running = false;
+      refreshIcons();
+      showToast(seeded?.detail || "The synthetic demo could not be loaded.", "warning");
+      return;
+    }
+    state.projectId = seeded.project.id;
+    state.demoMode = false;
+    state.backendConnected = true;
+    state.questions = (seeded.questions ?? []).map(normalizeQuestion);
+    state.selectedId = state.questions[0]?.id ?? null;
+    state.evidence = (seeded.documents ?? []).filter((document) => document.kind === "evidence").map(normalizeEvidence);
+    dom.projectName.textContent = seeded.project.name;
+    const questionnaire = (seeded.documents ?? []).find((document) => document.kind === "questionnaire");
+    if (questionnaire) renderQuestionnaireRecord(questionnaire, state.questions.length);
+    renderEvidence();
+    renderAll();
+  }
+
   const stages = [
     ["Extract questions", `${state.questions.length}`],
     ["Retrieve evidence", ""],
@@ -1181,7 +1220,7 @@ async function runPipeline() {
     await delay(520);
   }
 
-  const projectId = state.demoMode ? null : await ensureProject();
+  const projectId = await ensureProject();
   const payload = projectId
     ? await apiRequest(`/api/projects/${encodeURIComponent(projectId)}/run`, { method: "POST", timeoutMs: 90000 })
     : null;
@@ -1253,6 +1292,19 @@ async function exportResponses() {
       2,
     );
     downloadBlob(new Blob([body], { type: "application/json" }), "evidenceops-responses.json");
+  } else if (format === "csv") {
+    const headers = ["ID", "Category", "Question", "Answer", "Status", "Evidence coverage", "Citations"];
+    const csvRows = questions.map((question) => [
+      question.number,
+      question.category,
+      question.text,
+      spreadsheetSafeText(question.answer),
+      STATUS_LABELS[question.status],
+      `${question.coverage}%`,
+      question.citations.map((citation) => `${citation.source}: ${citation.location}`).join(" | "),
+    ]);
+    const csv = [headers, ...csvRows].map((row) => row.map(csvCell).join(",")).join("\r\n");
+    downloadBlob(new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" }), "evidenceops-responses.csv");
   } else {
     const rows = questions
       .map(
@@ -1323,6 +1375,10 @@ async function apiRequest(path, options = {}) {
 function spreadsheetSafeText(value) {
   const text = String(value ?? "");
   return /^[\s]*[=+\-@]/.test(text) ? `'${text}` : text;
+}
+
+function csvCell(value) {
+  return `"${String(value ?? "").replaceAll('"', '""')}"`;
 }
 
 function showToast(message, tone = "success") {

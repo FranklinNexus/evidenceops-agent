@@ -49,6 +49,12 @@ class AgentDraft(BaseModel):
     citation_indexes: list[int] = Field(description="Zero-based evidence excerpt indexes supporting the answer")
 
 
+def _validated_citation_indexes(indexes: list[int], citation_count: int) -> list[int]:
+    if not indexes or any(index < 0 or index >= citation_count for index in indexes):
+        raise RuntimeError("Strands provider returned invalid citation indexes")
+    return sorted(set(indexes))
+
+
 class StrandsOpenAIProvider(AnswerProvider):
     """Strands Agents SDK adapter for an OpenAI-compatible chat-completions endpoint."""
 
@@ -97,9 +103,7 @@ class StrandsOpenAIProvider(AnswerProvider):
         structured = result.structured_output
         if not isinstance(structured, AgentDraft):
             raise TypeError("Strands provider returned no structured draft")
-        indexes = sorted({index for index in structured.citation_indexes if 0 <= index < len(citations)})
-        if not indexes:
-            raise RuntimeError("Strands provider returned no valid citations")
+        indexes = _validated_citation_indexes(structured.citation_indexes, len(citations))
         return DraftResult(answer=structured.answer.strip(), citation_indexes=indexes, provider=self.name)
 
 
@@ -150,9 +154,7 @@ class StrandsBedrockProvider(AnswerProvider):
         structured = result.structured_output
         if not isinstance(structured, AgentDraft):
             raise TypeError("Strands Bedrock provider returned no structured draft")
-        indexes = sorted({index for index in structured.citation_indexes if 0 <= index < len(citations)})
-        if not indexes:
-            raise RuntimeError("Strands Bedrock provider returned no valid citations")
+        indexes = _validated_citation_indexes(structured.citation_indexes, len(citations))
         return DraftResult(answer=structured.answer.strip(), citation_indexes=indexes, provider=self.name)
 
 

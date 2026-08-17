@@ -8,6 +8,8 @@ EvidenceOps is the agent that knows when not to answer.
 
 It turns a security, compliance, or RFP questionnaire plus an organization-controlled evidence library into cited answer drafts, contradiction findings, missing-evidence requests, a human review queue, and an exportable response set. Every factual answer must resolve to supplied evidence. Unsupported claims stay blocked.
 
+EvidenceOps is for security, GRC, trust, and solutions engineering teams that must answer buyer questionnaires under deadline without weakening evidence discipline. It turns document search into an exception queue: supported drafts, source conflicts, and precise evidence requests, with a person deciding what leaves the system.
+
 ## Inspiration
 
 Security questionnaires look like writing work, but the expensive part is evidence control. Teams repeatedly search policies, audit reports, architecture documents, and previously approved responses to prove that every statement is current and consistent.
@@ -91,7 +93,7 @@ Retries and fallback are useful only if fallback stays grounded. EvidenceOps deg
 - Ran the real Strands SDK contract path in automated tests.
 - Kept provider credentials and generic prompt proxying outside the public interface.
 - Shipped a responsive review workspace, public MIT repository, synthetic fixtures, architecture package, and reproducible tests.
-- Reached 85% application coverage with 25 passing tests.
+- Reached 88% application coverage with 28 passing tests.
 
 ## What we learned
 
@@ -130,6 +132,7 @@ Production use would also add tenant authentication, role-based approval, malwar
 | Project name | `EvidenceOps` |
 | Track | `Professional Agents` |
 | Repository | https://github.com/FranklinNexus/evidenceops-agent |
+| Devpost thumbnail | `docs/assets/evidenceops-devpost-thumbnail.png` |
 | Product image | `docs/assets/evidenceops-demo.png` |
 | Architecture image | `docs/assets/evidenceops-architecture.png` |
 | Architecture document | https://github.com/FranklinNexus/evidenceops-agent/blob/main/docs/architecture.md |
@@ -145,7 +148,7 @@ EvidenceOps assists document preparation. It is not a certification, audit opini
 
 ## Rule check
 
-Verified against the official Agents for Humans Hackathon pages on 2026-08-16 (the rules page was updated on 2026-08-12):
+Verified against the official Agents for Humans Hackathon pages on 2026-08-17 (the rules page was updated on 2026-08-12):
 
 - Submission deadline: September 14, 2026 at 5:00 PM PT, shown as September 15, 2026 at 8:00 AM GMT+8.
 - Required: a new Strands project, public MIT or Apache repository, README, architecture diagram, public video no longer than five minutes, and AWS Builder ID.

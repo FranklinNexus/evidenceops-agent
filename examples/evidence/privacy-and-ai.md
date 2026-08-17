@@ -16,4 +16,4 @@ CloudDesk does not use customer content to train shared or public models. A cust
 
 ## Incident notice
 
-CloudDesk will notify the customer without undue delay and no later than 48 hours after confirming a security incident affecting customer content.
+CloudDesk's contractual security incident notification timeline requires notice without undue delay and no later than 48 hours after confirming a security incident affecting customer content.
