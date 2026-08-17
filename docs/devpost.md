@@ -136,9 +136,9 @@ Production use would also add tenant authentication, role-based approval, malwar
 | Product image | `docs/assets/evidenceops-demo.png` |
 | Architecture image | `docs/assets/evidenceops-architecture.png` |
 | Architecture document | https://github.com/FranklinNexus/evidenceops-agent/blob/main/docs/architecture.md |
-| Demo video | Add the final public YouTube or Vimeo URL; maximum 5:00 |
+| Demo video | https://youtu.be/PGBMf4dD2yA (4:52, public) |
 | Live demo | Optional; do not enter a localhost URL |
-| AWS Builder ID | Project owner enters the identity-bound email |
+| AWS Builder ID | Entered in the saved Additional info form; identity-bound value is not duplicated publicly |
 
 ## Disclosures
 

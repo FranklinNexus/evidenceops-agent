@@ -6,6 +6,8 @@ A fluent but unsupported compliance answer creates risk. EvidenceOps uses the [S
 
 ![EvidenceOps review workspace](docs/assets/evidenceops-demo.png)
 
+[Watch the 4:52 EvidenceOps demo](https://youtu.be/PGBMf4dD2yA).
+
 ## What the demo proves
 
 The included synthetic CloudDesk run makes the trust boundary visible in one review queue:

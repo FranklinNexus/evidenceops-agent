@@ -113,13 +113,13 @@ becomes an uncited answer."
 
 ## Recording checklist
 
-- [ ] The finished public video is no longer than 5:00; target approximately 4:45.
-- [ ] Synthetic inputs are visibly labeled as demo data.
-- [ ] The cited source passage is readable in the recording.
-- [ ] At least one supported answer, one conflict, and one missing-evidence item are shown.
-- [ ] An edit visibly invalidates approval before re-approval.
-- [ ] The exported output is opened, not merely downloaded.
-- [ ] No API key, local secret file, personal data, or customer evidence appears.
-- [ ] Any precomputed fallback run is described accurately.
-- [ ] No claim implies that optional AWS deployment components are already live.
-- [ ] The final screen includes the project name and repository URL once publishing is approved.
+- [x] The finished public video is 4:52: https://youtu.be/PGBMf4dD2yA.
+- [x] Synthetic inputs are visibly labeled as demo data.
+- [x] The cited source passage is readable in the recording.
+- [x] At least one supported answer, one conflict, and one missing-evidence item are shown.
+- [x] An edit visibly invalidates approval before re-approval.
+- [x] The exported output is opened, not merely downloaded.
+- [x] No API key, local secret file, personal data, or customer evidence appears.
+- [x] The evidence-only fallback run is described accurately.
+- [x] No claim implies that optional AWS deployment components are already live.
+- [x] The final screen includes the project name and repository URL.

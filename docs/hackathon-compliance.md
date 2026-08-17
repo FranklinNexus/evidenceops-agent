@@ -36,10 +36,10 @@ as a release criterion.
 | MIT or Apache license | `LICENSE` (MIT), detected by GitHub | Complete |
 | README | `README.md` | Complete |
 | Architecture diagram | `docs/architecture.md` and `docs/assets/evidenceops-architecture.png`; attached to draft | Complete |
-| Public YouTube/Vimeo video, maximum 5 minutes | `docs/demo-script.md` and local video asset | Publication URL required |
-| Video demonstrates working project | Final 4:52 local video covers the full evidence-to-export flow | Media QA complete; public URL required |
+| Public YouTube/Vimeo video, maximum 5 minutes | https://youtu.be/PGBMf4dD2yA (4:52) | Complete and public |
+| Video demonstrates working project | Final video covers the full evidence-to-export flow | Complete; embedded in Devpost preview |
 | Pitch covers problem, audience, and importance | Devpost copy and demo script | Complete |
-| AWS Builder ID | Identity-bound email field | Project owner enters it on Devpost |
+| AWS Builder ID | Identity-bound email field | Complete in saved Devpost form |
 | Optional live demo | Local demo only | Deployment decision required |
 | AWS account | Required by official FAQ | User action required |
 | Optional builder.aws post with `Agents for Humans` in the title | Not published | Optional; do not delay submission |
@@ -63,10 +63,10 @@ the deadline. The official rules were updated on 2026-08-12 to remove the
 - Final Devpost submission.
 - AWS credit request.
 - AWS deployment or creation of paid resources.
-- Publishing the demo video or builder.aws post.
+- Publishing the optional builder.aws post.
 
-Devpost registration and the submission draft are complete. Identity, eligibility confirmation,
-public video publication, and final submission remain with the project owner.
+Devpost registration, identity fields, the public video, and the submission draft are complete.
+Eligibility and terms confirmation plus the final submission remain with the project owner.
 
 ## Official sources
 

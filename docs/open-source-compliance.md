@@ -62,6 +62,6 @@ See `docs/runtime-validation.md` for commands and scope.
 
 ## Remaining submission actions
 
-- Publish the final public YouTube or Vimeo demo at no more than five minutes.
-- Enter the project owner's country, submitter type, and AWS Builder ID on Devpost.
-- Recheck eligibility and every public URL, then have the project owner perform the final Submit action before 2026-09-14 17:00 PT.
+- Public demo complete: https://youtu.be/PGBMf4dD2yA (4:52).
+- Devpost country, submitter type, AWS Builder ID, repository, architecture, and video fields are saved.
+- Recheck eligibility and the official terms, then have the project owner perform the final Submit action before 2026-09-14 17:00 PT.
